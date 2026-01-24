@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, UserRole, AppState, Activity, Sale, CashMovement, Notification } from './types';
+import { User, UserRole, AppState, Activity, Sale, CashMovement, Notification, Plantation } from './types';
 import { TRANSLATIONS } from './constants';
 import Dashboard from './components/Dashboard';
 import Sidebar from './components/Sidebar';
@@ -14,22 +14,32 @@ import UserManagement from './components/UserManagement';
 import ChatBot from './components/ChatBot';
 import TutorialModule from './components/TutorialModule';
 import ProductionModule from './components/ProductionModule';
+import SuperAdminModule from './components/SuperAdminModule';
 import { syncDataWithServer } from './syncService';
 
+// CONFIGURATION DES COMPTES PAR DÉFAUT
 const INITIAL_USERS: User[] = [
-  { id: '1', username: 'admin', role: UserRole.ADMIN, password: 'admin', plantationId: 'BST-001' },
-  { id: '2', username: 'worker', role: UserRole.EMPLOYEE, password: 'worker', plantationId: 'BST-001' }
+  // TON COMPTE SUPER-ADMIN (Vendeur)
+  { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
+  
+  // COMPTE DE TEST POUR LA PREMIÈRE ENTREPRISE CLIENTE
+  { id: 'admin-bst', username: 'admin', role: UserRole.ADMIN, password: 'admin', plantationId: 'BST-001' },
+  { id: 'worker-bst', username: 'worker', role: UserRole.EMPLOYEE, password: 'worker', plantationId: 'BST-001' }
+];
+
+const INITIAL_PLANTATIONS: Plantation[] = [
+  { id: 'BST-001', name: 'Plameraie de Démo BST', ownerName: 'Client Démo', contactEmail: 'demo@palmeraie.com', status: 'ACTIVE', expiryDate: '2026-01-01' }
 ];
 
 const App: React.FC = () => {
   const getTabFromHash = () => window.location.hash.replace('#', '') || 'dashboard';
 
+  // INITIALISATION DE LA "BASE DE DONNÉES" LOCALE
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('plameraie_state_saas');
-    if (saved) {
-        return JSON.parse(saved);
-    }
+    const saved = localStorage.getItem('plameraie_db_v3');
+    if (saved) return JSON.parse(saved);
     return {
+      plantations: INITIAL_PLANTATIONS,
       users: INITIAL_USERS,
       currentUser: null,
       activities: [],
@@ -46,7 +56,11 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(getTabFromHash());
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Détection de connexion
+  // SAUVEGARDE AUTOMATIQUE DANS LA BD LOCALE
+  useEffect(() => {
+    localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
+  }, [state]);
+
   useEffect(() => {
     const handleOnline = () => setState(prev => ({ ...prev, isOnline: true }));
     const handleOffline = () => setState(prev => ({ ...prev, isOnline: false }));
@@ -58,23 +72,12 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Synchronisation automatique quand on revient en ligne
   useEffect(() => {
-    if (state.isOnline && !state.isSyncing) {
-      syncDataWithServer(state, setState);
-    }
+    if (state.isOnline && !state.isSyncing) syncDataWithServer(state, setState);
   }, [state.isOnline, state.activities, state.sales, state.cashMovements]);
 
   useEffect(() => {
-    localStorage.setItem('plameraie_state_saas', JSON.stringify(state));
-  }, [state]);
-
-  useEffect(() => {
-    if (state.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', state.theme === 'dark');
   }, [state.theme]);
 
   useEffect(() => {
@@ -85,7 +88,13 @@ const App: React.FC = () => {
 
   const t = TRANSLATIONS[state.language];
 
-  // FILTRAGE DES DONNÉES PAR PLANTATION (Multi-Propriétaire)
+  // LOGIQUE DE FILTRAGE DES DONNÉES (SÉCURITÉ SaaS)
+  const currentPlantation = useMemo(() => 
+    state.plantations.find(p => p.id === state.currentUser?.plantationId),
+  [state.plantations, state.currentUser]);
+
+  const isAccessSuspended = state.currentUser?.role !== UserRole.SUPER_ADMIN && currentPlantation?.status === 'SUSPENDED';
+
   const filteredActivities = useMemo(() => 
     state.activities.filter(a => a.plantationId === state.currentUser?.plantationId),
   [state.activities, state.currentUser]);
@@ -100,7 +109,10 @@ const App: React.FC = () => {
 
   const handleLogin = (user: User) => {
     setState(prev => ({ ...prev, currentUser: user }));
-    addNotification('INFO', `${t.login} : ${user.username}`);
+    // Si c'est un SuperAdmin, on le redirige vers sa console
+    if (user.role === UserRole.SUPER_ADMIN) {
+        window.location.hash = 'superadmin';
+    }
   };
 
   const handleLogout = () => {
@@ -108,93 +120,36 @@ const App: React.FC = () => {
     window.location.hash = '';
   };
 
-  const addNotification = (type: Notification['type'], message: string) => {
-    const newNotif: Notification = {
-      id: Date.now().toString(),
-      type,
-      message,
-      date: new Date().toLocaleString(),
-      isRead: false
-    };
-    setState(prev => ({
-      ...prev,
-      notifications: [newNotif, ...prev.notifications].slice(0, 50)
-    }));
-  };
-
-  const addActivity = (activity: Omit<Activity, 'id' | 'plantationId' | 'updatedAt'>) => {
-    const newActivity: Activity = { 
-      ...activity, 
-      id: Date.now().toString(), 
-      plantationId: state.currentUser!.plantationId,
-      updatedAt: Date.now(),
-      synced: false
-    };
-    
-    setState(prev => ({
-        ...prev,
-        activities: [newActivity, ...prev.activities],
-        cashMovements: activity.cost > 0 ? [
-            {
-              id: `cm-${Date.now()}`,
-              plantationId: state.currentUser!.plantationId,
-              date: activity.date,
-              type: 'OUT' as const,
-              amount: activity.cost,
-              reason: `${activity.label} (${activity.zone})`,
-              updatedAt: Date.now(),
-              synced: false
-            },
-            ...prev.cashMovements
-          ] : prev.cashMovements
-    }));
-    
-    addNotification('SUCCESS', `${t[activity.type.toLowerCase()]} : ${activity.label}`);
-  };
-
-  const addSale = (sale: Omit<Sale, 'id' | 'plantationId' | 'updatedAt'>) => {
-    const newSale: Sale = { 
-        ...sale, 
+  const addActivity = (activity: any) => {
+    if (isAccessSuspended) return;
+    const newActivity = { 
+        ...activity, 
         id: Date.now().toString(), 
-        plantationId: state.currentUser!.plantationId,
-        updatedAt: Date.now(),
-        synced: false
+        plantationId: state.currentUser!.plantationId, 
+        updatedAt: Date.now(), 
+        synced: false 
     };
-    setState(prev => ({
-      ...prev,
-      sales: [newSale, ...prev.sales],
-      cashMovements: [
-        {
-          id: `cm-s-${Date.now()}`,
-          plantationId: state.currentUser!.plantationId,
-          date: sale.date,
-          type: 'IN' as const,
-          amount: sale.total,
-          reason: `Vente: ${sale.product}`,
-          updatedAt: Date.now(),
-          synced: false
-        },
-        ...prev.cashMovements
-      ]
-    }));
-    addNotification('SUCCESS', `${t.sales} : ${sale.product}`);
+    setState(prev => ({ ...prev, activities: [newActivity, ...prev.activities] }));
   };
-
-  if (!state.currentUser) {
-    return (
-      <Login 
-        onLogin={handleLogin} 
-        users={state.users} 
-        t={t} 
-        theme={state.theme} 
-        language={state.language}
-        onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
-        onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
-      />
-    );
-  }
 
   const renderContent = () => {
+    // ÉCRAN SPÉCIAL POUR TOI (MIGUELF)
+    if (state.currentUser?.role === UserRole.SUPER_ADMIN) {
+        return <SuperAdminModule state={state} setState={setState} />;
+    }
+
+    // ÉCRAN POUR LES COMPTES SUSPENDUS (NON-PAIEMENT)
+    if (isAccessSuspended) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-red-100 dark:border-red-900/20">
+                <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-5xl mb-6">🔒</div>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white">Abonnement Expiré</h2>
+                <p className="text-slate-500 mt-4 max-w-md">L'accès à votre plantation <b>{currentPlantation?.name}</b> a été suspendu. Veuillez contacter <b>MiguelF</b> pour régulariser votre situation.</p>
+                <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-xs font-mono text-slate-400">ID Plantation: {state.currentUser?.plantationId}</div>
+            </div>
+        );
+    }
+
     const scopedState = { ...state, activities: filteredActivities, sales: filteredSales, cashMovements: filteredCash };
     switch (activeTab) {
       case 'dashboard': return <Dashboard state={scopedState} t={t} />;
@@ -203,7 +158,7 @@ const App: React.FC = () => {
       case 'harvest': return <ActivityModule type="HARVEST" state={scopedState} onAdd={addActivity} t={t} />;
       case 'production': return <ProductionModule state={scopedState} onAdd={addActivity} t={t} />;
       case 'packaging': return <ActivityModule type="PACKAGING" state={scopedState} onAdd={addActivity} t={t} />;
-      case 'sales': return <SalesModule state={scopedState} onAdd={addSale} t={t} />;
+      case 'sales': return <SalesModule state={scopedState} onAdd={(s: any) => { if (!isAccessSuspended) { const ns = { ...s, id: Date.now().toString(), plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false }; setState(p => ({ ...p, sales: [ns, ...p.sales] })) }}} t={t} />;
       case 'cash': return <CashModule state={scopedState} t={t} />;
       case 'stats': return <StatsModule state={scopedState} t={t} />;
       case 'users': return <UserManagement state={state} setState={setState} t={t} />;
@@ -212,39 +167,37 @@ const App: React.FC = () => {
     }
   };
 
+  if (!state.currentUser) {
+    return (
+      <Login 
+        onLogin={handleLogin} users={state.users} t={t} theme={state.theme} language={state.language}
+        onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
+        onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={tab => window.location.hash = tab} 
-        userRole={state.currentUser.role} 
-        t={t} 
-        onLogout={handleLogout}
+        activeTab={activeTab} setActiveTab={tab => window.location.hash = tab} 
+        userRole={state.currentUser.role} t={t} onLogout={handleLogout}
       />
       
       <div className="flex-1 flex flex-col min-w-0 relative">
-        {/* Barre d'état Offline/Sync */}
         <div className={`h-1 w-full absolute top-0 z-50 transition-all duration-1000 ${state.isSyncing ? 'bg-amber-500 animate-pulse' : state.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-        {!state.isOnline && (
-          <div className="bg-red-500 text-white text-[10px] font-bold py-1 px-4 text-center uppercase tracking-widest">
-            Mode Hors-ligne - Les données seront synchronisées plus tard
-          </div>
-        )}
-
         <Header 
           t={t} theme={state.theme} language={state.language} 
           onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
           onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
           searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           user={state.currentUser} notifications={state.notifications}
-          markAllRead={() => setState(p => ({ ...p, notifications: p.notifications.map(n => ({ ...n, isRead: true })) }))}
+          markAllRead={() => {}}
         />
-        
         <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           {renderContent()}
         </main>
       </div>
-
       <ChatBot state={state} t={t} />
     </div>
   );

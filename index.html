@@ -3,8 +3,17 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Plameraie BST</title>
+    
+    <!-- Configuration PWA pour Android -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#166534">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2950/2950143.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -24,8 +33,10 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            /* Empêche le rebond sur mobile */
+            overscroll-behavior-y: contain;
         }
-        /* Smooth theme transition */
+        /* Transition fluide du thème */
         body, aside, header, main, div, button, input, select, textarea {
             transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
         }
@@ -41,6 +52,12 @@
         }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #475569;
+        }
+        /* Style pour l'installation mobile */
+        @media (display-mode: standalone) {
+            header {
+                padding-top: env(safe-area-inset-top);
+            }
         }
     </style>
 <script type="importmap">

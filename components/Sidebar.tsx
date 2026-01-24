@@ -13,21 +13,27 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole, t, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Définition des accès : certains menus sont réservés aux ADMIN ou SUPER_ADMIN
   const menuItems = [
-    { id: 'dashboard', label: t.dashboard, icon: '📊', adminOnly: false },
-    { id: 'creation', label: t.creation, icon: '🌱', adminOnly: false },
-    { id: 'maintenance', label: t.maintenance, icon: '🛠️', adminOnly: false },
-    { id: 'harvest', label: t.harvest, icon: '🚜', adminOnly: false },
-    { id: 'production', label: t.production, icon: '🏭', adminOnly: false },
-    { id: 'packaging', label: t.packaging, icon: '📦', adminOnly: false },
-    { id: 'sales', label: t.sales, icon: '💰', adminOnly: false },
-    { id: 'cash', label: t.cash, icon: '🏦', adminOnly: true },
-    { id: 'stats', label: t.stats, icon: '📈', adminOnly: true },
-    { id: 'tutorial', label: t.tutorial, icon: '🎓', adminOnly: false },
-    { id: 'users', label: t.users, icon: '👥', adminOnly: true },
+    { id: 'dashboard', label: t.dashboard, icon: '📊', restricted: false },
+    { id: 'creation', label: t.creation, icon: '🌱', restricted: false },
+    { id: 'maintenance', label: t.maintenance, icon: '🛠️', restricted: false },
+    { id: 'harvest', label: t.harvest, icon: '🚜', restricted: false },
+    { id: 'production', label: t.production, icon: '🏭', restricted: false },
+    { id: 'packaging', label: t.packaging, icon: '📦', restricted: false },
+    { id: 'sales', label: t.sales, icon: '💰', restricted: false },
+    { id: 'cash', label: t.cash, icon: '🏦', restricted: true }, // Caché pour employé
+    { id: 'stats', label: t.stats, icon: '📈', restricted: true }, // Caché pour employé
+    { id: 'tutorial', label: t.tutorial, icon: '🎓', restricted: false },
+    { id: 'users', label: t.users, icon: '👥', restricted: true }, // Caché pour employé
   ];
 
-  const filteredItems = menuItems.filter(item => !item.adminOnly || userRole === UserRole.ADMIN);
+  // Un employé ne peut voir que les menus non-restreints
+  const filteredItems = menuItems.filter(item => {
+    if (userRole === UserRole.SUPER_ADMIN) return true;
+    if (userRole === UserRole.ADMIN) return true;
+    return !item.restricted; // Si c'est un EMPLOYEE, on ne garde que les non-restreints
+  });
 
   return (
     <>
@@ -48,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole, t,
             <div className="w-10 h-10 bg-green-700 rounded-lg flex items-center justify-center text-xl text-white font-bold">P</div>
             <div>
               <h1 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">Plameraie BST</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Management System</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Système de Gestion</p>
             </div>
           </div>
 
@@ -76,6 +82,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole, t,
           </nav>
 
           <div className="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
+            <div className="px-3 py-2 mb-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Session</p>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-300 truncate">{userRole}</p>
+            </div>
             <button
               onClick={onLogout}
               className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
