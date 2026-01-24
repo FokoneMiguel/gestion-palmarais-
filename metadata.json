@@ -1,0 +1,8 @@
+{
+  "name": "Plameraie BST - Management System",
+  "description": "Une application complète de gestion de palmeraie intégrant le suivi de production, la maintenance, les ventes, la finance et des analyses intelligentes propulsées par Gemini.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
