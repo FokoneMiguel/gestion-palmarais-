@@ -1,21 +1,20 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, UserRole, AppState, Activity, Sale, CashMovement, Notification, Plantation } from './types';
-import { TRANSLATIONS } from './constants';
-import Dashboard from './components/Dashboard';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import Login from './components/Login';
-import ActivityModule from './components/ActivityModule';
-import SalesModule from './components/SalesModule';
-import CashModule from './components/CashModule';
-import StatsModule from './components/StatsModule';
-import UserManagement from './components/UserManagement';
-import ChatBot from './components/ChatBot';
-import TutorialModule from './components/TutorialModule';
-import ProductionModule from './components/ProductionModule';
-import SuperAdminModule from './components/SuperAdminModule';
-import { syncDataWithServer } from './syncService';
+import { User, UserRole, AppState, Activity, Sale, CashMovement, Notification, Plantation } from './types.ts';
+import { TRANSLATIONS } from './constants.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import Sidebar from './components/Sidebar.tsx';
+import Header from './components/Header.tsx';
+import Login from './components/Login.tsx';
+import ActivityModule from './components/ActivityModule.tsx';
+import SalesModule from './components/SalesModule.tsx';
+import CashModule from './components/CashModule.tsx';
+import StatsModule from './components/StatsModule.tsx';
+import UserManagement from './components/UserManagement.tsx';
+import ChatBot from './components/ChatBot.tsx';
+import TutorialModule from './components/TutorialModule.tsx';
+import ProductionModule from './components/ProductionModule.tsx';
+import SuperAdminModule from './components/SuperAdminModule.tsx';
+import { syncDataWithServer } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
@@ -77,7 +76,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleHashChange = () => {
         const newTab = getTabFromHash();
-        // Protection des routes pour les employés
         if (state.currentUser?.role === UserRole.EMPLOYEE && (newTab === 'cash' || newTab === 'stats' || newTab === 'users')) {
             window.location.hash = 'dashboard';
             return;
@@ -152,7 +150,6 @@ const App: React.FC = () => {
 
     const scopedState = { ...state, activities: filteredActivities, sales: filteredSales, cashMovements: filteredCash };
     
-    // Protection supplémentaire au rendu
     if (state.currentUser?.role === UserRole.EMPLOYEE && ['cash', 'stats', 'users'].includes(activeTab)) {
         return <Dashboard state={scopedState} t={t} />;
     }
