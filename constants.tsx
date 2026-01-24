@@ -70,7 +70,13 @@ export const TRANSLATIONS = {
     batchHistory: "Historique des Lots",
     productionSteps: "Étapes de Transformation",
     avgYield: "Rendement Moyen",
-    totalProcessed: "Total Matière Traitée"
+    totalProcessed: "Total Matière Traitée",
+    opLists: {
+      CREATION: ["Abattage des arbres", "Défrichage", "Achat des plants", "Piquetage", "Trouaison", "Transport des plants", "Mise en terre", "Installation des protections", "Autre..."],
+      MAINTENANCE: ["Redressage des plants", "Remplacement plants morts", "Sarclage", "Défrichage", "Lutte nuisibles/maladies", "Fertilisation", "Récoltes intermédiaires", "Autre..."],
+      HARVEST: ["Coupe des régimes", "Ramassage des branches", "Ramassage des noix", "Raccourcissement pédoncules", "Préparation transformation", "Transport et stockage", "Autre..."],
+      PRODUCTION: ["Séparation des éléments", "Traitement des noix", "Cuisson", "Pilage", "Extraction de l'huile", "Récupération sous-produits", "Autre..."]
+    }
   },
   EN: {
     dashboard: "Dashboard",
@@ -140,7 +146,13 @@ export const TRANSLATIONS = {
     batchHistory: "Batch History",
     productionSteps: "Processing Steps",
     avgYield: "Avg Yield",
-    totalProcessed: "Total Processed"
+    totalProcessed: "Total Processed",
+    opLists: {
+      CREATION: ["Tree Felling", "Clearing", "Sapling Purchase", "Staking", "Digging", "Sapling Transport", "Planting", "Protection Install", "Other..."],
+      MAINTENANCE: ["Straightening plants", "Replanting dead ones", "Weeding", "Land clearing", "Pest control", "Fertilization", "Intermediate harvests", "Other..."],
+      HARVEST: ["Cutting bunches", "Branch gathering", "Nut gathering", "Trimming stalks", "Processing prep", "Transport & Storage", "Other..."],
+      PRODUCTION: ["Separation", "Nut treatment", "Cooking", "Crushing", "Oil extraction", "By-product recovery", "Other..."]
+    }
   }
 };
 

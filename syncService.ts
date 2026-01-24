@@ -1,8 +1,7 @@
 
-import { AppState, Activity, Sale, CashMovement } from './types';
+import { AppState } from './types';
 
-// Simulation de la "Base de Données Cloud" partagée
-// Dans une vraie application, cela serait stocké sur ton serveur (Firebase, Supabase, etc.)
+// Simulation de la "Base de Données Cloud" partagée entre tous les utilisateurs d'une même plantation
 const mockServerStorage = {
     activities: [] as any[],
     sales: [] as any[],
@@ -10,41 +9,51 @@ const mockServerStorage = {
 };
 
 export const syncDataWithServer = async (state: AppState, setState: Function) => {
-  if (!navigator.onLine) return;
-
-  // 1. On détecte ce qui n'a pas encore été envoyé au serveur
-  const unsyncedActivities = state.activities.filter(a => !a.synced);
-  const unsyncedSales = state.sales.filter(s => !s.synced);
-  const unsyncedCash = state.cashMovements.filter(c => !c.synced);
-
-  // S'il n'y a rien à synchroniser et qu'on a déjà fait un tour récent, on s'arrête
-  if (unsyncedActivities.length === 0 && unsyncedSales.length === 0 && unsyncedCash.length === 0 && state.isSyncing === false) {
-    // Optionnel : on pourrait quand même faire un "fetch" pour voir si un collègue a ajouté des trucs
-    // Mais pour la démo, on simule l'envoi
-  }
+  if (!navigator.onLine || !state.currentUser) return;
 
   setState((prev: AppState) => ({ ...prev, isSyncing: true }));
 
   try {
-    // On simule un délai réseau (1.5 seconde)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Simulation d'un délai réseau
+    await new Promise(resolve => setTimeout(resolve, 1200));
 
-    // Simulation de l'envoi : on ajoute nos données locales au "serveur imaginaire"
-    // On filtre pour ne pas envoyer de doublons dans la démo
+    // 1. PUSH : Envoyer nos données locales non synchronisées
+    const unsyncedActivities = state.activities.filter(a => !a.synced);
+    const unsyncedSales = state.sales.filter(s => !s.synced);
+    const unsyncedCash = state.cashMovements.filter(c => !c.synced);
+
     unsyncedActivities.forEach(a => mockServerStorage.activities.push({...a, synced: true}));
     unsyncedSales.forEach(s => mockServerStorage.sales.push({...s, synced: true}));
     unsyncedCash.forEach(c => mockServerStorage.cash.push({...c, synced: true}));
 
-    // 2. Mise à jour de l'état local : marquer tout comme synchronisé
-    setState((prev: AppState) => ({
-      ...prev,
-      isSyncing: false,
-      activities: prev.activities.map(a => ({ ...a, synced: true })),
-      sales: prev.sales.map(s => ({ ...s, synced: true })),
-      cashMovements: prev.cashMovements.map(c => ({ ...c, synced: true }))
-    }));
+    // 2. PULL : Récupérer les données globales pour CETTE plantation (Simulé)
+    // Dans un vrai système, on filtrerait par plantationId sur le serveur
+    const plantationId = state.currentUser.plantationId;
     
-    console.log("Cloud Sync : Vos données sont maintenant à jour pour toute l'équipe.");
+    // On fusionne les données du "serveur" avec les nôtres en évitant les doublons par ID
+    setState((prev: AppState) => {
+        const mergeById = (local: any[], server: any[]) => {
+            const map = new Map();
+            local.forEach(item => map.set(item.id, item));
+            server.forEach(item => {
+                if (item.plantationId === plantationId) {
+                    map.set(item.id, { ...item, synced: true });
+                }
+            });
+            return Array.from(map.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+        };
+
+        return {
+            ...prev,
+            isSyncing: false,
+            activities: mergeById(prev.activities, mockServerStorage.activities),
+            sales: mergeById(prev.sales, mockServerStorage.sales),
+            // Fix: Property 'cash' does not exist on type 'AppState'. Using 'cashMovements' instead.
+            cashMovements: mergeById(prev.cashMovements, mockServerStorage.cash)
+        };
+    });
+    
+    console.log(`Sync réussie pour ${plantationId} : Données équipe à jour.`);
   } catch (error) {
     console.error("Échec de la Cloud Sync:", error);
     setState((prev: AppState) => ({ ...prev, isSyncing: false }));
