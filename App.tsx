@@ -17,12 +17,8 @@ import ProductionModule from './components/ProductionModule';
 import SuperAdminModule from './components/SuperAdminModule';
 import { syncDataWithServer } from './syncService';
 
-// CONFIGURATION DES COMPTES PAR DÉFAUT
 const INITIAL_USERS: User[] = [
-  // TON COMPTE SUPER-ADMIN (Vendeur)
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
-  
-  // COMPTE DE TEST POUR LA PREMIÈRE ENTREPRISE CLIENTE
   { id: 'admin-bst', username: 'admin', role: UserRole.ADMIN, password: 'admin', plantationId: 'BST-001' },
   { id: 'worker-bst', username: 'worker', role: UserRole.EMPLOYEE, password: 'worker', plantationId: 'BST-001' }
 ];
@@ -34,7 +30,6 @@ const INITIAL_PLANTATIONS: Plantation[] = [
 const App: React.FC = () => {
   const getTabFromHash = () => window.location.hash.replace('#', '') || 'dashboard';
 
-  // INITIALISATION DE LA "BASE DE DONNÉES" LOCALE
   const [state, setState] = useState<AppState>(() => {
     const saved = localStorage.getItem('plameraie_db_v3');
     if (saved) return JSON.parse(saved);
@@ -56,7 +51,6 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(getTabFromHash());
   const [searchQuery, setSearchQuery] = useState('');
 
-  // SAUVEGARDE AUTOMATIQUE DANS LA BD LOCALE
   useEffect(() => {
     localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
   }, [state]);
@@ -73,22 +67,29 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (state.isOnline && !state.isSyncing) syncDataWithServer(state, setState);
-  }, [state.isOnline, state.activities, state.sales, state.cashMovements]);
+    if (state.isOnline && !state.isSyncing && state.currentUser) syncDataWithServer(state, setState);
+  }, [state.isOnline, state.activities, state.sales, state.cashMovements, state.currentUser]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', state.theme === 'dark');
   }, [state.theme]);
 
   useEffect(() => {
-    const handleHashChange = () => setActiveTab(getTabFromHash());
+    const handleHashChange = () => {
+        const newTab = getTabFromHash();
+        // Protection des routes pour les employés
+        if (state.currentUser?.role === UserRole.EMPLOYEE && (newTab === 'cash' || newTab === 'stats' || newTab === 'users')) {
+            window.location.hash = 'dashboard';
+            return;
+        }
+        setActiveTab(newTab);
+    };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [state.currentUser]);
 
   const t = TRANSLATIONS[state.language];
 
-  // LOGIQUE DE FILTRAGE DES DONNÉES (SÉCURITÉ SaaS)
   const currentPlantation = useMemo(() => 
     state.plantations.find(p => p.id === state.currentUser?.plantationId),
   [state.plantations, state.currentUser]);
@@ -109,9 +110,10 @@ const App: React.FC = () => {
 
   const handleLogin = (user: User) => {
     setState(prev => ({ ...prev, currentUser: user }));
-    // Si c'est un SuperAdmin, on le redirige vers sa console
     if (user.role === UserRole.SUPER_ADMIN) {
         window.location.hash = 'superadmin';
+    } else {
+        window.location.hash = 'dashboard';
     }
   };
 
@@ -133,12 +135,10 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    // ÉCRAN SPÉCIAL POUR TOI (MIGUELF)
     if (state.currentUser?.role === UserRole.SUPER_ADMIN) {
         return <SuperAdminModule state={state} setState={setState} />;
     }
 
-    // ÉCRAN POUR LES COMPTES SUSPENDUS (NON-PAIEMENT)
     if (isAccessSuspended) {
         return (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-red-100 dark:border-red-900/20">
@@ -151,6 +151,12 @@ const App: React.FC = () => {
     }
 
     const scopedState = { ...state, activities: filteredActivities, sales: filteredSales, cashMovements: filteredCash };
+    
+    // Protection supplémentaire au rendu
+    if (state.currentUser?.role === UserRole.EMPLOYEE && ['cash', 'stats', 'users'].includes(activeTab)) {
+        return <Dashboard state={scopedState} t={t} />;
+    }
+
     switch (activeTab) {
       case 'dashboard': return <Dashboard state={scopedState} t={t} />;
       case 'creation': return <ActivityModule type="CREATION" state={scopedState} onAdd={addActivity} t={t} />;
