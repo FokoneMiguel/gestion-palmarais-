@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { getGeminiResponse, generateTTS } from '../geminiService';
+import { getGeminiResponse, generateTTS, checkApiHealth } from '../geminiService';
 import { AppState } from '../types';
 
 interface ChatBotProps {
@@ -10,19 +10,32 @@ interface ChatBotProps {
 
 const ChatBot: React.FC<ChatBotProps> = ({ state, t }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [apiStatus, setApiStatus] = useState<{ok: boolean | null, message: string}>({ ok: null, message: "Vérification..." });
   const [messages, setMessages] = useState<{role: 'user' | 'ai', content: string}[]>([
-    { role: 'ai', content: "Bonjour ! Je suis l'assistant Plameraie BST. Comment puis-je vous aider aujourd'hui ? Je peux vous conseiller sur l'entretien, analyser vos rendements ou vous expliquer une fonctionnalité." }
+    { role: 'ai', content: "Bonjour ! Je suis l'assistant Plameraie BST. Comment puis-je vous aider aujourd'hui ?" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Vérifier la connexion au démarrage
+  useEffect(() => {
+    if (isOpen && apiStatus.ok === null) {
+      checkApiHealth().then(status => {
+        setApiStatus(status);
+        if (!status.ok) {
+          setMessages(prev => [...prev, { role: 'ai', content: `⚠️ Problème de configuration : ${status.message}` }]);
+        }
+      });
+    }
+  }, [isOpen, apiStatus.ok]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
     
     const userMsg = input;
     setInput('');
@@ -78,12 +91,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ state, t }) => {
               <span className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-lg">🤖</span>
               <div>
                 <p className="text-sm">Assistant BST</p>
-                <p className="text-[10px] font-normal opacity-80">Propulsé par Gemini 3</p>
+                <p className="text-[10px] font-normal opacity-80">IA Gemini 3 Flash</p>
               </div>
             </div>
-            <div className="flex items-center space-x-1">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              <span className="text-[10px]">En ligne</span>
+            <div className="flex items-center space-x-2">
+              <span className={`w-2 h-2 rounded-full ${apiStatus.ok === true ? 'bg-green-400 animate-pulse' : apiStatus.ok === false ? 'bg-red-500' : 'bg-slate-300'}`}></span>
+              <span className="text-[10px]">{apiStatus.ok === true ? 'Connecté' : apiStatus.ok === false ? 'Erreur' : 'Test...'}</span>
             </div>
           </div>
           
@@ -97,7 +110,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ state, t }) => {
                     : 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-600 rounded-tl-none'}
                 `}>
                   <p>{m.content}</p>
-                  {m.role === 'ai' && (
+                  {m.role === 'ai' && apiStatus.ok && (
                     <button onClick={() => playAudio(m.content)} className="mt-3 flex items-center space-x-1 text-[10px] font-bold opacity-60 hover:opacity-100 uppercase tracking-widest transition-opacity">
                       <span>🔊</span> <span>Écouter</span>
                     </button>
@@ -126,13 +139,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ state, t }) => {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
-                placeholder="Posez une question agronomique..."
-                className="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 dark:text-white outline-none"
+                disabled={apiStatus.ok === false}
+                placeholder={apiStatus.ok === false ? "Assistant désactivé" : "Posez une question..."}
+                className="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 dark:text-white outline-none disabled:opacity-50"
               />
               <button 
                 onClick={handleSend}
-                disabled={isLoading}
-                className={`bg-amber-500 text-white p-2.5 rounded-xl hover:bg-amber-600 transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : 'active:scale-90 shadow-lg shadow-amber-500/20'}`}
+                disabled={isLoading || apiStatus.ok === false}
+                className={`bg-amber-500 text-white p-2.5 rounded-xl hover:bg-amber-600 transition-all ${isLoading || apiStatus.ok === false ? 'opacity-50 cursor-not-allowed' : 'active:scale-90 shadow-lg shadow-amber-500/20'}`}
               >
                 🚀
               </button>
