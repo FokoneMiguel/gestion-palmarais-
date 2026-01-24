@@ -1,61 +1,71 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
 
+/**
+ * Service pour interagir avec l'IA Gemini.
+ * Note: L'instance doit être créée au moment de l'appel pour garantir l'accès à la clé API injectée.
+ */
+
 export const checkApiHealth = async (): Promise<{ok: boolean, message: string}> => {
-  if (!process.env.API_KEY || process.env.API_KEY === 'undefined') {
-    return { ok: false, message: "Clé API manquante (API_KEY non définie)." };
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === 'undefined') {
+    return { ok: false, message: "Clé API non configurée." };
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [{ parts: [{ text: "ping" }] }],
+      contents: [{ parts: [{ text: "Vérification de connexion. Réponds par 'OK'." }] }],
     });
     
-    if (response.text) {
-      return { ok: true, message: "Connecté à Gemini avec succès." };
-    }
-    return { ok: false, message: "Réponse vide du modèle." };
+    return response.text ? { ok: true, message: "Connecté." } : { ok: false, message: "Réponse vide." };
   } catch (error: any) {
-    console.error("Diagnostic API Gemini:", error);
-    return { 
-      ok: false, 
-      message: `Erreur API: ${error.message || "Problème de connexion"}` 
-    };
+    console.error("Health Check Error:", error);
+    return { ok: false, message: error.message || "Erreur de connexion." };
   }
 };
 
 export const getGeminiResponse = async (prompt: string, context?: string) => {
-  if (!process.env.API_KEY) return "Erreur : La clé API n'est pas configurée.";
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const model = "gemini-3-flash-preview";
-  
-  const systemInstruction = `Tu es l'assistant intelligent de Plameraie BST. 
-  Réponds aux questions de l'utilisateur sur la plantation, donne des conseils agronomiques. 
-  Sois concis. Contexte: ${context || "Aucun"}`;
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return "Configuration requise : Clé API manquante.";
 
   try {
+    const ai = new GoogleGenAI({ apiKey });
+    const modelName = "gemini-3-flash-preview";
+    
+    const systemInstruction = `Tu es l'assistant expert de Plameraie BST. 
+    Ton rôle est d'aider le gestionnaire de plantation. 
+    Donne des conseils sur : 
+    1. L'agronomie (palmier à huile, fertilisation NPK, lutte contre le Cercospora).
+    2. La gestion (optimisation des coûts, calcul de rendement huile/matière).
+    3. L'utilisation de l'application.
+    Sois professionnel, concis et utilise un ton encourageant.
+    Contexte actuel : ${context || "Tableau de bord général"}`;
+
     const response = await ai.models.generateContent({
-      model: model,
+      model: modelName,
       contents: [{ parts: [{ text: prompt }] }],
-      config: { systemInstruction, temperature: 0.7 }
+      config: { 
+        systemInstruction,
+        temperature: 0.7,
+        topP: 0.95
+      }
     });
     
-    return response.text || "Désolé, je n'ai pas pu générer de réponse.";
+    return response.text || "Je n'ai pas pu formuler de réponse. Pouvez-vous reformuler ?";
   } catch (error: any) {
-    console.error("Gemini Response Error:", error);
-    if (error.message?.includes("403")) return "Erreur 403 : Accès refusé. Vérifiez que votre clé API a accès au modèle Gemini 3 Flash.";
-    if (error.message?.includes("401")) return "Erreur 401 : Clé API invalide.";
-    return "L'assistant rencontre une difficulté technique temporaire.";
+    console.error("Gemini Error:", error);
+    return "Désolé, je rencontre une erreur de communication. Vérifiez votre connexion.";
   }
 };
 
 export const generateTTS = async (text: string) => {
-  if (!process.env.API_KEY) return null;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return null;
+  
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text }] }],
