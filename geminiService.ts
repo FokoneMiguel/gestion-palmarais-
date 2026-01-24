@@ -3,45 +3,49 @@ import { GoogleGenAI, Modality } from "@google/genai";
 
 /**
  * Service pour interagir avec l'IA Gemini.
- * Note: L'instance doit être créée au moment de l'appel pour garantir l'accès à la clé API injectée.
  */
 
 export const checkApiHealth = async (): Promise<{ok: boolean, message: string}> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined') {
-    return { ok: false, message: "Clé API non configurée." };
+  if (!apiKey || apiKey === 'undefined' || apiKey === '') {
+    return { ok: false, message: "La clé API Gemini est manquante ou invalide dans l'environnement." };
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
+    // Test minimaliste avec Gemini 3 Flash
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [{ parts: [{ text: "Vérification de connexion. Réponds par 'OK'." }] }],
+      contents: [{ parts: [{ text: "Vérifie la connexion. Réponds par un seul mot : Connecté." }] }],
+      config: { maxOutputTokens: 10 }
     });
     
-    return response.text ? { ok: true, message: "Connecté." } : { ok: false, message: "Réponse vide." };
+    if (response && response.text) {
+      return { ok: true, message: "Connecté à l'IA avec succès." };
+    }
+    return { ok: false, message: "Le modèle n'a pas renvoyé de texte." };
   } catch (error: any) {
     console.error("Health Check Error:", error);
-    return { ok: false, message: error.message || "Erreur de connexion." };
+    let errorMsg = "Erreur de connexion.";
+    if (error.message?.includes("403")) errorMsg = "Accès refusé (403). Vérifiez les permissions de votre clé API.";
+    if (error.message?.includes("401")) errorMsg = "Clé API non autorisée (401).";
+    return { ok: false, message: `${errorMsg} Détails: ${error.message?.substring(0, 50)}...` };
   }
 };
 
 export const getGeminiResponse = async (prompt: string, context?: string) => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return "Configuration requise : Clé API manquante.";
+  if (!apiKey || apiKey === 'undefined') return "⚠️ Configuration requise : La clé API n'est pas détectée. Contactez l'administrateur.";
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     const modelName = "gemini-3-flash-preview";
     
-    const systemInstruction = `Tu es l'assistant expert de Plameraie BST. 
-    Ton rôle est d'aider le gestionnaire de plantation. 
-    Donne des conseils sur : 
-    1. L'agronomie (palmier à huile, fertilisation NPK, lutte contre le Cercospora).
-    2. La gestion (optimisation des coûts, calcul de rendement huile/matière).
-    3. L'utilisation de l'application.
-    Sois professionnel, concis et utilise un ton encourageant.
-    Contexte actuel : ${context || "Tableau de bord général"}`;
+    const systemInstruction = `Tu es l'assistant intelligent de Plameraie BST. 
+    Ton expertise couvre l'agronomie tropicale, la gestion de palmeraies et la comptabilité agricole.
+    Réponds de manière précise, concise et professionnelle.
+    Utilise le contexte suivant pour tes réponses : ${context || "Pas de contexte spécifique fourni"}.
+    Si l'utilisateur pose une question hors sujet (autre que plantation/gestion/aide app), redirige-le poliment vers le domaine de la palmeraie.`;
 
     const response = await ai.models.generateContent({
       model: modelName,
@@ -49,20 +53,22 @@ export const getGeminiResponse = async (prompt: string, context?: string) => {
       config: { 
         systemInstruction,
         temperature: 0.7,
-        topP: 0.95
+        topP: 0.9,
+        maxOutputTokens: 800
       }
     });
     
-    return response.text || "Je n'ai pas pu formuler de réponse. Pouvez-vous reformuler ?";
+    return response.text || "Désolé, je n'ai pas pu générer de réponse intelligible.";
   } catch (error: any) {
-    console.error("Gemini Error:", error);
-    return "Désolé, je rencontre une erreur de communication. Vérifiez votre connexion.";
+    console.error("Gemini Response Error:", error);
+    if (error.message?.includes("Safety")) return "Désolé, ma politique de sécurité m'empêche de répondre à cette requête spécifique.";
+    return `Erreur technique : ${error.message || "Le service est temporairement indisponible"}. Veuillez réessayer dans quelques instants.`;
   }
 };
 
 export const generateTTS = async (text: string) => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey || apiKey === 'undefined') return null;
   
   try {
     const ai = new GoogleGenAI({ apiKey });
