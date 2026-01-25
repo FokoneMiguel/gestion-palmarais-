@@ -2,7 +2,7 @@ import { GoogleGenAI, Modality } from "@google/genai";
 
 export const checkApiHealth = async (): Promise<{ok: boolean, message: string}> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined') {
+  if (!apiKey || apiKey === 'undefined' || apiKey === '') {
     return { ok: false, message: "Clé API non configurée." };
   }
 
@@ -15,13 +15,14 @@ export const checkApiHealth = async (): Promise<{ok: boolean, message: string}> 
     
     return response.text ? { ok: true, message: "Connecté." } : { ok: false, message: "Pas de réponse." };
   } catch (error: any) {
-    return { ok: false, message: error.message || "Erreur API." };
+    console.warn("API Health check failed:", error);
+    return { ok: false, message: error.message || "Erreur de connexion API." };
   }
 };
 
 export const getGeminiResponse = async (prompt: string, context?: string) => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return "Erreur : Clé API manquante.";
+  if (!apiKey || apiKey === 'undefined' || apiKey === '') return "Erreur : Clé API non disponible sur ce serveur.";
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -29,21 +30,21 @@ export const getGeminiResponse = async (prompt: string, context?: string) => {
       model: "gemini-3-flash-preview",
       contents: [{ parts: [{ text: prompt }] }],
       config: {
-        systemInstruction: `Tu es l'assistant de Plameraie BST. Réponds de façon experte sur la plantation de palmiers. Contexte : ${context || "Général"}`,
+        systemInstruction: `Tu es l'assistant expert de Plameraie BST. Réponds aux questions sur la gestion des palmiers à huile. Contexte actuel de l'utilisateur : ${context || "Général"}.`,
         temperature: 0.7,
       }
     });
     
-    return response.text || "Désolé, je n'ai pas pu générer de réponse.";
+    return response.text || "Désolé, je ne parviens pas à formuler une réponse.";
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    return "L'assistant rencontre une difficulté technique. Veuillez réessayer.";
+    return "L'assistant expert rencontre un problème technique temporaire.";
   }
 };
 
 export const generateTTS = async (text: string) => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey || apiKey === 'undefined' || apiKey === '') return null;
   
   try {
     const ai = new GoogleGenAI({ apiKey });

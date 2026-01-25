@@ -1,81 +1,61 @@
 
-import { AppState, Activity, Sale, CashMovement } from './types';
+import { AppState } from './types';
 
-/**
- * SIMULATION D'UN SERVEUR CLOUD CENTRAL
- * Dans une version de production, ces appels utiliseraient fetch() vers une API (Firebase/Supabase)
- */
-const STORAGE_KEY = 'plameraie_cloud_mock';
-
-const getCloudData = () => {
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : { activities: [], sales: [], cashMovements: [] };
-};
-
-const saveCloudData = (data: any) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+// Simulation de la "Base de Données Cloud" partagée entre tous les utilisateurs d'une même plantation
+const mockServerStorage = {
+    activities: [] as any[],
+    sales: [] as any[],
+    cash: [] as any[]
 };
 
 export const syncDataWithServer = async (state: AppState, setState: Function) => {
   if (!navigator.onLine || !state.currentUser) return;
 
-  const plantationId = state.currentUser.plantationId;
-  if (plantationId === 'SYSTEM') return; // Le SuperAdmin n'est pas lié à une seule plantation
-
   setState((prev: AppState) => ({ ...prev, isSyncing: true }));
 
   try {
-    // 1. Simulation délai réseau (800ms)
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Simulation d'un délai réseau
+    await new Promise(resolve => setTimeout(resolve, 1200));
 
-    const cloudDb = getCloudData();
+    // 1. PUSH : Envoyer nos données locales non synchronisées
+    const unsyncedActivities = state.activities.filter(a => !a.synced);
+    const unsyncedSales = state.sales.filter(s => !s.synced);
+    const unsyncedCash = state.cashMovements.filter(c => !c.synced);
 
-    // 2. PUSH : On envoie nos données locales non synchronisées au Cloud
-    const localUnsyncedActivities = state.activities.filter(a => !a.synced);
-    const localUnsyncedSales = state.sales.filter(s => !s.synced);
-    const localUnsyncedCash = state.cashMovements.filter(c => !c.synced);
+    unsyncedActivities.forEach(a => mockServerStorage.activities.push({...a, synced: true}));
+    unsyncedSales.forEach(s => mockServerStorage.sales.push({...s, synced: true}));
+    unsyncedCash.forEach(c => mockServerStorage.cash.push({...c, synced: true}));
 
-    // On ajoute les nouvelles données locales à la "DB Cloud"
-    cloudDb.activities = [...cloudDb.activities, ...localUnsyncedActivities.map(a => ({...a, synced: true}))];
-    cloudDb.sales = [...cloudDb.sales, ...localUnsyncedSales.map(s => ({...s, synced: true}))];
-    cloudDb.cashMovements = [...cloudDb.cashMovements, ...localUnsyncedCash.map(c => ({...c, synced: true}))];
-
-    saveCloudData(cloudDb);
-
-    // 3. PULL : On récupère TOUTES les données du Cloud pour NOTRE plantation (données des collègues incluses)
+    // 2. PULL : Récupérer les données globales pour CETTE plantation (Simulé)
+    // Dans un vrai système, on filtrerait par plantationId sur le serveur
+    const plantationId = state.currentUser.plantationId;
+    
+    // On fusionne les données du "serveur" avec les nôtres en évitant les doublons par ID
     setState((prev: AppState) => {
-      const merge = (local: any[], cloud: any[]) => {
-        const map = new Map();
-        // On charge le local
-        local.forEach(item => map.set(item.id, item));
-        // On fusionne avec le cloud (le cloud gagne si timestamp plus récent ou si donnée absente)
-        cloud.forEach(item => {
-          if (item.plantationId === plantationId) {
-            const existing = map.get(item.id);
-            if (!existing || item.updatedAt > (existing.updatedAt || 0)) {
-              map.set(item.id, { ...item, synced: true });
-            }
-          }
-        });
-        return Array.from(map.values()).sort((a, b) => {
-            const dateA = new Date(a.date).getTime();
-            const dateB = new Date(b.date).getTime();
-            return dateB - dateA;
-        });
-      };
+        const mergeById = (local: any[], server: any[]) => {
+            const map = new Map();
+            local.forEach(item => map.set(item.id, item));
+            server.forEach(item => {
+                if (item.plantationId === plantationId) {
+                    map.set(item.id, { ...item, synced: true });
+                }
+            });
+            return Array.from(map.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+        };
 
-      return {
-        ...prev,
-        isSyncing: false,
-        activities: merge(prev.activities, cloudDb.activities),
-        sales: merge(prev.sales, cloudDb.sales),
-        cashMovements: merge(prev.cashMovements, cloudDb.cashMovements)
-      };
+        return {
+            ...prev,
+            isSyncing: false,
+            activities: mergeById(prev.activities, mockServerStorage.activities),
+            sales: mergeById(prev.sales, mockServerStorage.sales),
+            // Fix: Property 'cash' does not exist on type 'AppState'. Using 'cashMovements' instead.
+            cashMovements: mergeById(prev.cashMovements, mockServerStorage.cash)
+        };
     });
-
-    console.log(`[Sync] Plantation ${plantationId} synchronisée avec l'équipe.`);
+    
+    console.log(`Sync réussie pour ${plantationId} : Données équipe à jour.`);
   } catch (error) {
-    console.error("Erreur de synchronisation équipe:", error);
+    console.error("Échec de la Cloud Sync:", error);
     setState((prev: AppState) => ({ ...prev, isSyncing: false }));
   }
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const TRANSLATIONS = {
@@ -14,7 +13,7 @@ export const TRANSLATIONS = {
     stats: "Statistiques",
     users: "Gestion Utilisateurs",
     logout: "Déconnexion",
-    searchPlaceholder: "Rechercher une opération, date...",
+    searchPlaceholder: "Rechercher une opération...",
     recentActivities: "Activités Récentes",
     totalSales: "Total des Ventes",
     totalCosts: "Total des Coûts",
@@ -26,7 +25,7 @@ export const TRANSLATIONS = {
     role: "Rôle",
     admin: "Administrateur",
     employee: "Employé",
-    tutorial: "Tutoriel interactif",
+    tutorial: "Guide & Aide",
     aiAssistant: "Assistant IA",
     date: "Date",
     zone: "Zone",
@@ -49,33 +48,33 @@ export const TRANSLATIONS = {
     notifications: "Notifications",
     noNotifications: "Aucune notification",
     markAllRead: "Tout marquer comme lu",
-    lowBalanceAlert: "Alerte : Solde de caisse faible !",
-    tutorialTitle: "Centre d'Apprentissage Plameraie BST",
-    tutorialSubtitle: "Maîtrisez tous les aspects de votre plantation en quelques minutes.",
-    lessons: {
-      intro: "Introduction & Navigation",
-      creation: "Gestion de la Création",
-      maintenance: "Maintenance & Entretien",
-      harvest: "Récoltes & Logistique",
-      finance: "Gestion de la Caisse",
-      stats: "Analyse des Performances"
+    tutorialTitle: "Centre d'Apprentissage BST",
+    tutorialSubtitle: "Tout ce qu'il faut savoir pour gérer votre plantation.",
+    superAdmin: {
+      hello: "Bonjour, MiguelF",
+      welcome: "Console de Maîtrise Plameraie BST",
+      clientCount: "Clients Actifs",
+      newClient: "Inscrire une nouvelle entreprise",
+      activeClients: "Liste des Palmeraies",
+      plantationName: "Nom de la Palmeraie",
+      managerName: "Nom du Gérant",
+      email: "Email de contact",
+      generate: "Générer Code d'Accès",
+      clientCode: "Code Client",
+      status: "Paiement",
+      actions: "Actions",
+      success: "Compte créé !",
+      giveCode: "Envoyez ce code au client :",
+      defaultCreds: "* Identifiants : admin / admin",
+      suspend: "Suspendre",
+      reactivate: "Activer",
+      noClients: "Aucun client enregistré."
     },
-    yield: "Rendement",
-    rawMaterial: "Matière Première",
-    processed: "Traité",
-    produced: "Produit",
-    oilOutput: "Huile Produite",
-    inputWeight: "Poids Entrant",
-    extractionRate: "Taux d'Extraction",
-    batchHistory: "Historique des Lots",
-    productionSteps: "Étapes de Transformation",
-    avgYield: "Rendement Moyen",
-    totalProcessed: "Total Matière Traitée",
-    opLists: {
-      CREATION: ["Abattage des arbres", "Défrichage", "Achat des plants", "Piquetage", "Trouaison", "Transport des plants", "Mise en terre", "Installation des protections", "Autre..."],
-      MAINTENANCE: ["Redressage des plants", "Remplacement plants morts", "Sarclage", "Défrichage", "Lutte nuisibles/maladies", "Fertilisation", "Récoltes intermédiaires", "Autre..."],
-      HARVEST: ["Coupe des régimes", "Ramassage des branches", "Ramassage des noix", "Raccourcissement pédoncules", "Préparation transformation", "Transport et stockage", "Autre..."],
-      PRODUCTION: ["Séparation des éléments", "Traitement des noix", "Cuisson", "Pilage", "Extraction de l'huile", "Récupération sous-produits", "Autre..."]
+    notifTexts: {
+      userLogin: "L'utilisateur {u} s'est connecté à la plantation {p}.",
+      newOp: "{u} a enregistré une opération : {op} (Zone {z})",
+      newSale: "Nouvelle vente de {qty}L par {u} au client {c}.",
+      appUpdate: "Mise à jour v3.1 : Nouvelles fonctionnalités de production disponibles !"
     }
   },
   EN: {
@@ -90,7 +89,7 @@ export const TRANSLATIONS = {
     stats: "Statistics",
     users: "User Management",
     logout: "Logout",
-    searchPlaceholder: "Search operation, date...",
+    searchPlaceholder: "Search...",
     recentActivities: "Recent Activities",
     totalSales: "Total Sales",
     totalCosts: "Total Costs",
@@ -102,7 +101,7 @@ export const TRANSLATIONS = {
     role: "Role",
     admin: "Administrator",
     employee: "Employee",
-    tutorial: "Interactive Tutorial",
+    tutorial: "Help & Guide",
     aiAssistant: "AI Assistant",
     date: "Date",
     zone: "Zone",
@@ -125,40 +124,40 @@ export const TRANSLATIONS = {
     notifications: "Notifications",
     noNotifications: "No notifications",
     markAllRead: "Mark all as read",
-    lowBalanceAlert: "Alert: Low cash balance!",
-    tutorialTitle: "Learning Center Plameraie BST",
-    tutorialSubtitle: "Master every aspect of your plantation in minutes.",
-    lessons: {
-      intro: "Introduction & Navigation",
-      creation: "Creation Management",
-      maintenance: "Maintenance & Upkeep",
-      harvest: "Harvests & Logistics",
-      finance: "Cash Management",
-      stats: "Performance Analysis"
+    tutorialTitle: "BST Learning Center",
+    tutorialSubtitle: "Master your plantation management.",
+    superAdmin: {
+      hello: "Hello, MiguelF",
+      welcome: "Plameraie BST Master Console",
+      clientCount: "Active Clients",
+      newClient: "Register new company",
+      activeClients: "Plantation List",
+      plantationName: "Plantation Name",
+      managerName: "Manager Name",
+      email: "Contact Email",
+      generate: "Generate Access Code",
+      clientCode: "Client Code",
+      status: "Payment",
+      actions: "Actions",
+      success: "Account created!",
+      giveCode: "Send this code to client:",
+      defaultCreds: "* Login: admin / admin",
+      suspend: "Suspend",
+      reactivate: "Activate",
+      noClients: "No clients registered."
     },
-    yield: "Yield",
-    rawMaterial: "Raw Material",
-    processed: "Processed",
-    produced: "Produced",
-    oilOutput: "Oil Produced",
-    inputWeight: "Input Weight",
-    extractionRate: "Extraction Rate",
-    batchHistory: "Batch History",
-    productionSteps: "Processing Steps",
-    avgYield: "Avg Yield",
-    totalProcessed: "Total Processed",
-    opLists: {
-      CREATION: ["Tree Felling", "Clearing", "Sapling Purchase", "Staking", "Digging", "Sapling Transport", "Planting", "Protection Install", "Other..."],
-      MAINTENANCE: ["Straightening plants", "Replanting dead ones", "Weeding", "Land clearing", "Pest control", "Fertilization", "Intermediate harvests", "Other..."],
-      HARVEST: ["Cutting bunches", "Branch gathering", "Nut gathering", "Trimming stalks", "Processing prep", "Transport & Storage", "Other..."],
-      PRODUCTION: ["Separation", "Nut treatment", "Cooking", "Crushing", "Oil extraction", "By-product recovery", "Other..."]
+    notifTexts: {
+      userLogin: "User {u} logged into plantation {p}.",
+      newOp: "{u} recorded an operation: {op} (Zone {z})",
+      newSale: "New sale of {qty}L by {u} to client {c}.",
+      appUpdate: "Update v3.1: New production features are live!"
     }
   }
 };
 
 export const COLORS = {
-  primary: "#166534", // Green-800
-  secondary: "#fbbf24", // Amber-400 (Palm oil color)
-  accent: "#ea580c", // Orange-600
+  primary: "#166534", 
+  secondary: "#fbbf24", 
+  accent: "#ea580c", 
   dark: "#0f172a"
 };
