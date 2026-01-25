@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, UserRole, AppState, Activity, Sale, CashMovement, Notification, Plantation } from './types.ts';
 import { TRANSLATIONS } from './constants.tsx';
@@ -49,6 +50,41 @@ const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<string>(getTabFromHash());
   const [searchQuery, setSearchQuery] = useState('');
+  const [importStatus, setImportStatus] = useState<{success: boolean, message: string} | null>(null);
+
+  // LOGIQUE DU LIEN MAGIQUE (Auto-Config)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const configData = urlParams.get('config');
+    
+    if (configData) {
+      try {
+        const decoded = JSON.parse(atob(configData));
+        setState(prev => {
+          // Fusion intelligente : on ne garde que MiguelF (SuperAdmin) et on ajoute les nouvelles données
+          const masterAccount = prev.users.find(u => u.role === UserRole.SUPER_ADMIN);
+          const newUsers = decoded.users || [];
+          const mergedUsers = masterAccount ? [masterAccount, ...newUsers.filter((u: User) => u.role !== UserRole.SUPER_ADMIN)] : newUsers;
+          
+          const newState = {
+            ...prev,
+            plantations: decoded.plantations || prev.plantations,
+            users: mergedUsers,
+            activities: decoded.activities || prev.activities,
+            sales: decoded.sales || prev.sales,
+            cashMovements: decoded.cashMovements || prev.cashMovements
+          };
+          localStorage.setItem('plameraie_db_v3', JSON.stringify(newState));
+          return newState;
+        });
+        setImportStatus({ success: true, message: "Configuration reçue ! Vous pouvez vous connecter." });
+        // Nettoyer l'URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (e) {
+        setImportStatus({ success: false, message: "Le lien de configuration est invalide." });
+      }
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
@@ -73,19 +109,6 @@ const App: React.FC = () => {
     document.documentElement.classList.toggle('dark', state.theme === 'dark');
   }, [state.theme]);
 
-  useEffect(() => {
-    const handleHashChange = () => {
-        const newTab = getTabFromHash();
-        if (state.currentUser?.role === UserRole.EMPLOYEE && (newTab === 'cash' || newTab === 'stats' || newTab === 'users')) {
-            window.location.hash = 'dashboard';
-            return;
-        }
-        setActiveTab(newTab);
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [state.currentUser]);
-
   const t = TRANSLATIONS[state.language];
 
   const currentPlantation = useMemo(() => 
@@ -94,25 +117,9 @@ const App: React.FC = () => {
 
   const isAccessSuspended = state.currentUser?.role !== UserRole.SUPER_ADMIN && currentPlantation?.status === 'SUSPENDED';
 
-  const filteredActivities = useMemo(() => 
-    state.activities.filter(a => a.plantationId === state.currentUser?.plantationId),
-  [state.activities, state.currentUser]);
-
-  const filteredSales = useMemo(() => 
-    state.sales.filter(s => s.plantationId === state.currentUser?.plantationId),
-  [state.sales, state.currentUser]);
-
-  const filteredCash = useMemo(() => 
-    state.cashMovements.filter(c => c.plantationId === state.currentUser?.plantationId),
-  [state.cashMovements, state.currentUser]);
-
   const handleLogin = (user: User) => {
     setState(prev => ({ ...prev, currentUser: user }));
-    if (user.role === UserRole.SUPER_ADMIN) {
-        window.location.hash = 'superadmin';
-    } else {
-        window.location.hash = 'dashboard';
-    }
+    window.location.hash = user.role === UserRole.SUPER_ADMIN ? 'superadmin' : 'dashboard';
   };
 
   const handleLogout = () => {
@@ -139,21 +146,20 @@ const App: React.FC = () => {
 
     if (isAccessSuspended) {
         return (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-red-100 dark:border-red-900/20">
-                <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-5xl mb-6">🔒</div>
-                <h2 className="text-3xl font-black text-slate-800 dark:text-white">Abonnement Expiré</h2>
-                <p className="text-slate-500 mt-4 max-w-md">L'accès à votre plantation <b>{currentPlantation?.name}</b> a été suspendu. Veuillez contacter <b>MiguelF</b> pour régulariser votre situation.</p>
-                <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-xs font-mono text-slate-400">ID Plantation: {state.currentUser?.plantationId}</div>
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center text-5xl mb-6">🔒</div>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white">Accès Suspendu</h2>
+                <p className="text-slate-500 mt-4 max-w-md">Veuillez contacter MiguelF pour régulariser votre situation.</p>
             </div>
         );
     }
 
-    const scopedState = { ...state, activities: filteredActivities, sales: filteredSales, cashMovements: filteredCash };
+    const scopedState = { ...state, 
+        activities: state.activities.filter(a => a.plantationId === state.currentUser?.plantationId),
+        sales: state.sales.filter(s => s.plantationId === state.currentUser?.plantationId),
+        cashMovements: state.cashMovements.filter(c => c.plantationId === state.currentUser?.plantationId)
+    };
     
-    if (state.currentUser?.role === UserRole.EMPLOYEE && ['cash', 'stats', 'users'].includes(activeTab)) {
-        return <Dashboard state={scopedState} t={t} />;
-    }
-
     switch (activeTab) {
       case 'dashboard': return <Dashboard state={scopedState} t={t} />;
       case 'creation': return <ActivityModule type="CREATION" state={scopedState} onAdd={addActivity} t={t} />;
@@ -172,31 +178,27 @@ const App: React.FC = () => {
 
   if (!state.currentUser) {
     return (
-      <Login 
-        onLogin={handleLogin} users={state.users} t={t} theme={state.theme} language={state.language}
-        onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
-        onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
-      />
+      <>
+        {importStatus && (
+          <div className={`fixed top-0 left-0 right-0 z-[100] p-4 text-center text-white font-black uppercase text-xs tracking-widest animate-in slide-in-from-top duration-500 ${importStatus.success ? 'bg-green-600' : 'bg-red-600'}`}>
+            {importStatus.message}
+            <button onClick={() => setImportStatus(null)} className="ml-4 underline">Fermer</button>
+          </div>
+        )}
+        <Login 
+          onLogin={handleLogin} users={state.users} t={t} theme={state.theme} language={state.language}
+          onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
+          onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
+        />
+      </>
     );
   }
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
-      <Sidebar 
-        activeTab={activeTab} setActiveTab={tab => window.location.hash = tab} 
-        userRole={state.currentUser.role} t={t} onLogout={handleLogout}
-      />
-      
+      <Sidebar activeTab={activeTab} setActiveTab={tab => window.location.hash = tab} userRole={state.currentUser.role} t={t} onLogout={handleLogout} />
       <div className="flex-1 flex flex-col min-w-0 relative">
-        <div className={`h-1 w-full absolute top-0 z-50 transition-all duration-1000 ${state.isSyncing ? 'bg-amber-500 animate-pulse' : state.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-        <Header 
-          t={t} theme={state.theme} language={state.language} 
-          onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
-          onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
-          searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-          user={state.currentUser} notifications={state.notifications}
-          markAllRead={() => {}}
-        />
+        <Header t={t} theme={state.theme} language={state.language} onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))} onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))} searchQuery={searchQuery} setSearchQuery={setSearchQuery} user={state.currentUser} notifications={state.notifications} markAllRead={() => {}} />
         <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           {renderContent()}
         </main>
