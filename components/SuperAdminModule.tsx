@@ -12,8 +12,6 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
   const [showCode, setShowCode] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const saT = t.superAdmin;
-
   const generateActivationLink = (pId: string) => {
     const p = state.plantations.find(pl => pl.id === pId);
     const companyUsers = state.users.filter(u => u.plantationId === pId);
@@ -84,7 +82,6 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Formulaire de création */}
         <div className="lg:col-span-1 bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700">
           <h3 className="text-xl font-black mb-6 dark:text-white flex items-center">
             <span className="mr-2">➕</span> Nouveau Client
@@ -106,16 +103,14 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
           </form>
         </div>
 
-        {/* Liste Interactive des Entreprises */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center px-4">
             <h3 className="text-xl font-black text-slate-800 dark:text-white">Vos Palmeraies</h3>
             <span className="bg-slate-100 dark:bg-slate-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase text-slate-500">{state.plantations.filter(p => p.id !== 'SYSTEM').length} Actives</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+          <div className="space-y-4">
             {state.plantations.filter(p => p.id !== 'SYSTEM').map(p => {
-              const admin = state.users.find(u => u.plantationId === p.id && u.role === UserRole.ADMIN);
               const activityCount = state.activities.filter(a => a.plantationId === p.id).length;
               const salesTotal = state.sales.filter(s => s.plantationId === p.id).reduce((sum, s) => sum + s.total, 0);
 
@@ -141,7 +136,7 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
 
                     <div className="flex flex-wrap items-center gap-2">
                       <button onClick={() => shareWhatsApp(p.id)} className="flex-1 md:flex-none bg-[#25D366] text-white px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2 shadow-lg shadow-green-500/20 hover:scale-105 transition-transform">
-                        <span>Lien WhatsApp</span>
+                        <span>WhatsApp Client</span>
                       </button>
                       <button onClick={() => toggleSuspension(p.id)} className={`flex-1 md:flex-none px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border-2 transition-all ${p.status === 'ACTIVE' ? 'border-amber-100 text-amber-600 hover:bg-amber-50' : 'border-green-100 text-green-600 hover:bg-green-50'}`}>
                         {p.status === 'ACTIVE' ? 'Suspendre' : 'Réactiver'}
@@ -157,30 +152,6 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
           </div>
         </div>
       </div>
-
-      {/* Modal Modification Admin */}
-      {editingUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md">
-           <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[3rem] p-10 border border-slate-700 shadow-2xl">
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">🔑</div>
-                <h3 className="text-2xl font-black dark:text-white">Identifiants Client</h3>
-              </div>
-              <form onSubmit={handleUpdateCreds} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Utilisateur</label>
-                  <input required value={editingUser.username} onChange={e => setEditingUser({...editingUser, username: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mot de passe</label>
-                  <input required value={editingUser.password} onChange={e => setEditingUser({...editingUser, password: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
-                </div>
-                <button type="submit" className="w-full py-5 bg-green-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Sauvegarder</button>
-                <button type="button" onClick={() => setEditingUser(null)} className="w-full py-4 text-slate-400 font-bold text-xs uppercase">Fermer</button>
-              </form>
-           </div>
-        </div>
-      )}
 
       {showCode && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-green-900/60 backdrop-blur-xl">
