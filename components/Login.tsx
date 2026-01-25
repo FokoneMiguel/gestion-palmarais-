@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { User, UserRole } from '../types';
+import { User } from '../types';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -22,9 +21,7 @@ const Login: React.FC<LoginProps> = ({
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
     const checkCode = (username === 'MiguelF') ? 'SYSTEM' : plantationCode;
-
     const user = users.find(u => 
         u.username.toLowerCase() === username.toLowerCase() && 
         u.password === password && 
@@ -40,94 +37,65 @@ const Login: React.FC<LoginProps> = ({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4 transition-colors">
-      <div className="absolute top-4 right-4 flex space-x-2">
-        <button onClick={onLanguageToggle} className="p-2 text-sm font-bold dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl">{language}</button>
-        <button onClick={onThemeToggle} className="p-2 text-xl">{theme === 'light' ? '🌙' : '☀️'}</button>
+      <div className="absolute top-6 right-6 flex space-x-3">
+        <button onClick={onLanguageToggle} className="px-4 py-2 text-xs font-black dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-sm uppercase tracking-widest">{language}</button>
+        <button onClick={onThemeToggle} className="p-3 text-xl bg-white/50 dark:bg-slate-800/50 rounded-2xl shadow-sm">{theme === 'light' ? '🌙' : '☀️'}</button>
       </div>
 
-      <div className="w-full max-w-4xl flex flex-col md:flex-row gap-8 items-center">
-        {/* Panneau d'information Démo */}
-        <div className="w-full md:w-1/2 order-2 md:order-1">
-          <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl">
-            <h3 className="text-lg font-bold text-green-800 dark:text-green-400 mb-4 flex items-center">
-              <span className="mr-2">🚀</span> Accès Démonstration
-            </h3>
-            <div className="space-y-4">
-              <div className="p-3 bg-white dark:bg-slate-700 rounded-2xl border border-slate-100 dark:border-slate-600">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Compte Administrateur</p>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-slate-500">Code: <span className="font-bold text-slate-800 dark:text-white">BST-001</span></div>
-                  <div className="text-slate-500">User: <span className="font-bold text-slate-800 dark:text-white">admin</span></div>
-                  <div className="text-slate-500">Pass: <span className="font-bold text-slate-800 dark:text-white">admin</span></div>
-                </div>
-              </div>
-              <div className="p-3 bg-white dark:bg-slate-700 rounded-2xl border border-slate-100 dark:border-slate-600">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Compte Employé</p>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-slate-500">Code: <span className="font-bold text-slate-800 dark:text-white">BST-001</span></div>
-                  <div className="text-slate-500">User: <span className="font-bold text-slate-800 dark:text-white">worker</span></div>
-                  <div className="text-slate-500">Pass: <span className="font-bold text-slate-800 dark:text-white">worker</span></div>
-                </div>
-              </div>
-              <div className="p-3 bg-slate-900 text-white rounded-2xl">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Super Admin (Propriétaire)</p>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-slate-300">Code: <span className="font-bold text-white">SYSTEM</span></div>
-                  <div className="text-slate-300">User: <span className="font-bold text-white">MiguelF</span></div>
-                </div>
-              </div>
-            </div>
+      <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-600 to-green-800 rounded-[2.5rem] shadow-2xl text-4xl text-white font-black mb-6 transform hover:rotate-12 transition-transform">
+            P
           </div>
+          <h1 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Plameraie BST</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">Accès sécurisé à votre gestion</p>
         </div>
 
-        {/* Formulaire de Connexion */}
-        <div className="w-full md:w-1/2 order-1 md:order-2">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-700 rounded-2xl shadow-xl text-3xl text-white font-bold mb-3 transform hover:rotate-6 transition-transform">
-              P
+        <div className="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-slate-700 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 via-amber-500 to-green-500"></div>
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Code Plantation</label>
+              <input 
+                type="text" value={plantationCode} onChange={e => setPlantationCode(e.target.value.toUpperCase())}
+                placeholder="Ex: PALM-123"
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold"
+              />
             </div>
-            <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Plameraie BST</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Gestion Intelligente de Plantation</p>
-          </div>
 
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Code Plantation</label>
-                <input 
-                  type="text" value={plantationCode} onChange={e => setPlantationCode(e.target.value.toUpperCase())}
-                  placeholder="Ex: BST-001"
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl outline-none dark:text-white focus:ring-2 focus:ring-green-500 transition-all"
-                />
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Utilisateur</label>
+              <input 
+                type="text" value={username} onChange={e => setUsername(e.target.value)} required
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Mot de passe</label>
+              <input 
+                type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold"
+              />
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-2xl">
+                <p className="text-red-600 dark:text-red-400 text-xs font-black text-center">{error}</p>
               </div>
+            )}
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Utilisateur</label>
-                <input 
-                  type="text" value={username} onChange={e => setUsername(e.target.value)} required
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl outline-none dark:text-white focus:ring-2 focus:ring-green-500 transition-all"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mot de passe</label>
-                <input 
-                  type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl outline-none dark:text-white focus:ring-2 focus:ring-green-500 transition-all"
-                />
-              </div>
-
-              {error && <p className="text-red-500 text-xs font-bold text-center bg-red-50 dark:bg-red-900/10 py-2 rounded-lg">{error}</p>}
-
-              <button 
-                type="submit"
-                className="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 mt-2"
-              >
-                Accéder au Système
-              </button>
-            </form>
-          </div>
+            <button 
+              type="submit"
+              className="w-full bg-green-700 hover:bg-green-800 text-white font-black py-5 rounded-2xl shadow-xl shadow-green-900/20 transition-all transform active:scale-95 uppercase tracking-widest text-xs"
+            >
+              Se Connecter
+            </button>
+          </form>
         </div>
+        
+        <p className="text-center mt-8 text-slate-400 text-[10px] font-black uppercase tracking-widest">Plameraie BST © 2024</p>
       </div>
     </div>
   );

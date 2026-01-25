@@ -18,13 +18,10 @@ import { syncDataWithServer } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
-  { id: 'admin-bst', username: 'admin', role: UserRole.ADMIN, password: 'admin', plantationId: 'BST-001' },
-  { id: 'worker-bst', username: 'worker', role: UserRole.EMPLOYEE, password: 'worker', plantationId: 'BST-001' }
 ];
 
 const INITIAL_PLANTATIONS: Plantation[] = [
   { id: 'SYSTEM', name: 'Plameraie BST Master', ownerName: 'MiguelF', contactEmail: 'master@palmeraie.com', status: 'ACTIVE', expiryDate: '2099-01-01' },
-  { id: 'BST-001', name: 'Plameraie de Démo BST', ownerName: 'Client Démo', contactEmail: 'demo@palmeraie.com', status: 'ACTIVE', expiryDate: '2026-01-01' }
 ];
 
 const App: React.FC = () => {
@@ -49,6 +46,27 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const t = TRANSLATIONS[state.language];
+
+  // Détection du lien Magic Configuration
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const configData = params.get('config');
+    if (configData) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(configData))));
+        setState(prev => ({
+          ...prev,
+          plantations: [...prev.plantations, ...(decoded.plantations || [])].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
+          users: [...prev.users, ...(decoded.users || [])].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
+        }));
+        // Nettoyer l'URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        alert("✅ Configuration activée avec succès ! Vous pouvez vous connecter.");
+      } catch (e) {
+        console.error("Erreur de décodage config", e);
+      }
+    }
+  }, []);
 
   const addNotification = (notif: Omit<Notification, 'id' | 'date' | 'isRead'>) => {
     const newNotif: Notification = {
@@ -76,50 +94,29 @@ const App: React.FC = () => {
 
   const handleLogin = (user: User) => {
     setState(prev => ({ ...prev, currentUser: user }));
-    
-    // Notification de connexion
-    if (user.role !== UserRole.SUPER_ADMIN) {
-        const plant = state.plantations.find(p => p.id === user.plantationId);
-        addNotification({
-            type: 'INFO',
-            message: t.notifTexts.userLogin.replace('{u}', user.username).replace('{p}', plant?.name || user.plantationId)
-        });
-    }
-
     if (user.role === UserRole.SUPER_ADMIN) {
         setActiveTab('superadmin');
-        window.location.hash = 'superadmin';
     } else {
         setActiveTab('dashboard');
-        window.location.hash = 'dashboard';
     }
   };
 
   const handleLogout = () => {
     setState(prev => ({ ...prev, currentUser: null }));
-    window.location.hash = '';
   };
 
   const addActivity = (activity: any) => {
     if (isAccessSuspended) return;
     const newActivity = { ...activity, id: Date.now().toString(), plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false };
     setState(prev => ({ ...prev, activities: [newActivity, ...prev.activities] }));
-    
-    addNotification({
-        type: 'SUCCESS',
-        message: t.notifTexts.newOp.replace('{u}', state.currentUser!.username).replace('{op}', activity.label).replace('{z}', activity.zone)
-    });
+    addNotification({ type: 'SUCCESS', message: `${state.currentUser!.username} : ${activity.label}` });
   };
 
-  const addSale = (sale: any) => {
+  const onAddSale = (sale: any) => {
     if (isAccessSuspended) return;
     const newSale = { ...sale, id: Date.now().toString(), plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false };
     setState(prev => ({ ...prev, sales: [newSale, ...prev.sales] }));
-    
-    addNotification({
-        type: 'ALERT',
-        message: t.notifTexts.newSale.replace('{u}', state.currentUser!.username).replace('{qty}', sale.quantity.toString()).replace('{c}', sale.client)
-    });
+    addNotification({ type: 'ALERT', message: `Vente de ${sale.quantity}L par ${state.currentUser!.username}` });
   };
 
   const renderContent = () => {
@@ -129,10 +126,10 @@ const App: React.FC = () => {
 
     if (isAccessSuspended) {
         return (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white dark:bg-slate-800 rounded-3xl shadow-xl transition-colors">
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white dark:bg-slate-800 rounded-[3rem] shadow-xl">
                 <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-5xl mb-6">🔒</div>
-                <h2 className="text-3xl font-black text-slate-800 dark:text-white">Abonnement Expiré</h2>
-                <p className="text-slate-500 mt-4 max-w-md">L'accès à votre plantation <b>{currentPlantation?.name}</b> a été suspendu. Veuillez contacter <b>MiguelF</b>.</p>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white">Accès Suspendu</h2>
+                <p className="text-slate-500 mt-4 max-w-md">Veuillez contacter <b>MiguelF</b> pour activer votre abonnement.</p>
             </div>
         );
     }
@@ -150,7 +147,7 @@ const App: React.FC = () => {
       case 'harvest': return <ActivityModule type="HARVEST" state={scopedState} onAdd={addActivity} t={t} />;
       case 'production': return <ProductionModule state={scopedState} onAdd={addActivity} t={t} />;
       case 'packaging': return <ActivityModule type="PACKAGING" state={scopedState} onAdd={addActivity} t={t} />;
-      case 'sales': return <SalesModule state={scopedState} onAdd={addSale} t={t} />;
+      case 'sales': return <SalesModule state={scopedState} onAdd={onAddSale} t={t} />;
       case 'cash': return <CashModule state={scopedState} t={t} />;
       case 'stats': return <StatsModule state={scopedState} t={t} />;
       case 'users': return <UserManagement state={state} setState={setState} t={t} />;

@@ -73,8 +73,8 @@ export const TRANSLATIONS = {
     notifTexts: {
       userLogin: "L'utilisateur {u} s'est connecté à la plantation {p}.",
       newOp: "{u} a enregistré une opération : {op} (Zone {z})",
-      newSale: "Nouvelle vente de {qty}L par {u} au client {c}.",
-      appUpdate: "Mise à jour v3.1 : Nouvelles fonctionnalités de production disponibles !"
+      newSale: "Nouvelle vente de {qty} par {u} au client {c}.",
+      appUpdate: "Mise à jour Système : Les rapports de production sont désormais plus détaillés."
     }
   },
   EN: {
@@ -149,8 +149,8 @@ export const TRANSLATIONS = {
     notifTexts: {
       userLogin: "User {u} logged into plantation {p}.",
       newOp: "{u} recorded an operation: {op} (Zone {z})",
-      newSale: "New sale of {qty}L by {u} to client {c}.",
-      appUpdate: "Update v3.1: New production features are live!"
+      newSale: "New sale of {qty} by {u} to client {c}.",
+      appUpdate: "System Update: Production reports are now more detailed."
     }
   }
 };
