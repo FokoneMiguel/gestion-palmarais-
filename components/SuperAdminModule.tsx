@@ -10,11 +10,10 @@ interface SuperAdminModuleProps {
 const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState }) => {
   const [newPlantation, setNewPlantation] = useState({ name: '', owner: '', email: '', adminUser: 'admin', adminPass: '' });
   const [showCode, setShowCode] = useState<string | null>(null);
+  const [editingAccess, setEditingAccess] = useState<{plantationId: string, userId: string, user: string, pass: string} | null>(null);
 
   const addPlantation = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Génération d'un code unique en majuscules
     const id = `PALM-${Math.floor(100 + Math.random() * 899)}`;
     
     const plantation: Plantation = {
@@ -26,7 +25,6 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState }) 
       expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
     
-    // Création du compte utilisateur admin rattaché
     const defaultAdmin: User = {
         id: `user-${Date.now()}`,
         username: newPlantation.adminUser.trim() || 'admin',
@@ -35,7 +33,6 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState }) 
         plantationId: id
     };
 
-    // Mise à jour de l'état global (Plantations + Utilisateurs)
     setState(prev => ({ 
         ...prev, 
         plantations: [...prev.plantations, plantation],
@@ -44,6 +41,22 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState }) 
     
     setShowCode(id);
     setNewPlantation({ name: '', owner: '', email: '', adminUser: 'admin', adminPass: '' });
+  };
+
+  const handleUpdateAccess = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAccess) return;
+
+    setState(prev => ({
+      ...prev,
+      users: prev.users.map(u => 
+        u.id === editingAccess.userId 
+          ? { ...u, username: editingAccess.user.trim(), password: editingAccess.pass.trim() } 
+          : u
+      )
+    }));
+    setEditingAccess(null);
+    alert("Les identifiants ont été mis à jour avec succès.");
   };
 
   const toggleStatus = (id: string) => {
@@ -94,18 +107,31 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState }) 
             <div className="bg-white/10 p-8 rounded-3xl mt-6 text-5xl font-black text-center tracking-[0.4em] border-2 border-dashed border-white/30 backdrop-blur-sm shadow-inner">
                 {showCode}
             </div>
-            <div className="mt-8 p-6 bg-black/20 rounded-[2rem] text-sm space-y-3 border border-white/10">
-                <p className="font-black text-green-300 uppercase tracking-widest text-xs">Accès Admin Client</p>
-                <div className="flex justify-between">
-                  <span className="opacity-70">Utilisateur :</span>
-                  <span className="font-black">admin (ou celui choisi)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="opacity-70">Mot de passe :</span>
-                  <span className="font-black">Configuré par vous</span>
-                </div>
-            </div>
             <button onClick={() => setShowCode(null)} className="mt-10 w-full py-5 bg-white text-green-700 font-black rounded-3xl hover:bg-green-50 transition-all uppercase text-xs tracking-[0.2em] shadow-xl">J'ai noté les informations</button>
+        </div>
+      )}
+
+      {editingAccess && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-md p-10 rounded-[3.5rem] shadow-2xl animate-in zoom-in-95 duration-300">
+                <h3 className="text-2xl font-black mb-6 dark:text-white flex items-center">
+                    <span className="mr-3">🔑</span> Modifier Accès
+                </h3>
+                <form onSubmit={handleUpdateAccess} className="space-y-6">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Nouvel Identifiant</label>
+                        <input required value={editingAccess.user} onChange={e => setEditingAccess({...editingAccess, user: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none font-bold dark:text-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Nouveau Mot de Passe</label>
+                        <input required value={editingAccess.pass} onChange={e => setEditingAccess({...editingAccess, pass: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none font-bold dark:text-white" />
+                    </div>
+                    <div className="flex space-x-3 pt-4">
+                        <button type="button" onClick={() => setEditingAccess(null)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-700 font-black rounded-2xl uppercase text-[10px] tracking-widest dark:text-white">Annuler</button>
+                        <button type="submit" className="flex-1 py-4 bg-green-700 text-white font-black rounded-2xl shadow-xl uppercase text-[10px] tracking-widest">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
         </div>
       )}
 
@@ -123,10 +149,6 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState }) 
               <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Nom du Gérant</label>
                   <input required placeholder="M. Kouassi" value={newPlantation.owner} onChange={e => setNewPlantation({...newPlantation, owner: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-transparent focus:border-green-500 rounded-2xl outline-none transition-all dark:text-white font-bold" />
-              </div>
-              <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Email Client</label>
-                  <input required type="email" placeholder="client@email.com" value={newPlantation.email} onChange={e => setNewPlantation({...newPlantation, email: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-transparent focus:border-green-500 rounded-2xl outline-none transition-all dark:text-white font-bold" />
               </div>
               
               <div className="p-6 bg-slate-50 dark:bg-slate-700/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 space-y-4">
@@ -152,67 +174,69 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState }) 
           <div className="bg-white dark:bg-slate-800 rounded-[3.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="p-10 border-b border-slate-50 dark:border-slate-700 flex justify-between items-center bg-slate-50/30 dark:bg-slate-700/30">
                <h3 className="font-black text-2xl tracking-tight dark:text-white uppercase">Portefeuille Clients</h3>
-               <div className="flex space-x-2">
-                 <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Serveur Actif</span>
-               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-slate-50/50 dark:bg-slate-700/50">
                   <tr>
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Statut</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Admin</th>
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {state.plantations.filter(p => p.id !== 'SYSTEM').map(p => (
-                    <tr key={p.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-700/20 transition-colors group">
-                      <td className="px-10 py-8">
-                        <div className="flex items-center space-x-6">
-                            <div className="w-16 h-16 rounded-[1.5rem] bg-green-50 dark:bg-green-900/20 text-green-700 font-mono font-black flex items-center justify-center border-2 border-green-100 dark:border-green-900/30 text-xl shadow-sm">
-                                {p.id.split('-')[1]}
-                            </div>
-                            <div>
-                                <p className="font-black text-xl text-slate-800 dark:text-white leading-none mb-1">{p.name}</p>
-                                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.1em]">{p.id} • {p.ownerName}</p>
-                            </div>
-                        </div>
-                      </td>
-                      <td className="px-10 py-8 text-center">
-                        <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700 shadow-sm shadow-green-900/5' : 'bg-red-100 text-red-700 animate-pulse'}`}>
-                          {p.status === 'ACTIVE' ? 'ACTIF' : 'SUSPENDU'}
-                        </span>
-                      </td>
-                      <td className="px-10 py-8 text-right">
-                        <div className="flex justify-end space-x-3">
-                            <button 
-                                onClick={() => toggleStatus(p.id)} 
-                                className={`text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-2xl border-2 transition-all ${p.status === 'ACTIVE' ? 'border-amber-100 text-amber-600 hover:bg-amber-50' : 'border-green-100 text-green-600 hover:bg-green-50'}`}
-                            >
-                              {p.status === 'ACTIVE' ? 'Suspendre' : 'Activer'}
-                            </button>
-                            <button 
-                                onClick={() => deletePlantation(p.id)} 
-                                className="text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-2xl border-2 border-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm"
-                            >
-                              Supprimer
-                            </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {state.plantations.filter(p => p.id !== 'SYSTEM').length === 0 && (
-                      <tr>
-                          <td colSpan={3} className="p-32 text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="text-7xl opacity-20 mb-6 transform hover:rotate-12 transition-transform">📭</span>
-                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Aucun client actif sur le réseau.</p>
+                  {state.plantations.filter(p => p.id !== 'SYSTEM').map(p => {
+                    const adminUser = state.users.find(u => u.plantationId === p.id && u.role === UserRole.ADMIN);
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-700/20 transition-colors group">
+                        <td className="px-10 py-8">
+                          <div className="flex items-center space-x-6">
+                              <div className="w-16 h-16 rounded-[1.5rem] bg-green-50 dark:bg-green-900/20 text-green-700 font-mono font-black flex items-center justify-center border-2 border-green-100 dark:border-green-900/30 text-xl shadow-sm">
+                                  {p.id.split('-')[1]}
                               </div>
-                          </td>
+                              <div>
+                                  <p className="font-black text-xl text-slate-800 dark:text-white leading-none mb-1">{p.name}</p>
+                                  <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.1em]">{p.id} • {p.ownerName}</p>
+                                  <span className={`inline-block mt-2 px-3 py-1 rounded-full text-[8px] font-black uppercase ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {p.status}
+                                  </span>
+                              </div>
+                          </div>
+                        </td>
+                        <td className="px-10 py-8">
+                           {adminUser ? (
+                             <button 
+                               onClick={() => setEditingAccess({plantationId: p.id, userId: adminUser.id, user: adminUser.username, pass: adminUser.password || ''})}
+                               className="text-left group"
+                             >
+                                <p className="text-sm font-black dark:text-white group-hover:text-green-600 transition-colors">{adminUser.username}</p>
+                                <p className="text-[10px] text-slate-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">Cliquer pour modifier</p>
+                             </button>
+                           ) : (
+                             <span className="text-xs text-red-400 font-bold">❌ Aucun admin trouvé</span>
+                           )}
+                        </td>
+                        <td className="px-10 py-8 text-right">
+                          <div className="flex justify-end space-x-3">
+                              <button 
+                                  onClick={() => toggleStatus(p.id)} 
+                                  className={`p-3 rounded-2xl border-2 transition-all ${p.status === 'ACTIVE' ? 'border-amber-100 text-amber-600 hover:bg-amber-50' : 'border-green-100 text-green-600 hover:bg-green-50'}`}
+                                  title={p.status === 'ACTIVE' ? 'Suspendre' : 'Activer'}
+                              >
+                                {p.status === 'ACTIVE' ? '⏸️' : '▶️'}
+                              </button>
+                              <button 
+                                  onClick={() => deletePlantation(p.id)} 
+                                  className="p-3 rounded-2xl border-2 border-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm"
+                                  title="Supprimer"
+                              >
+                                🗑️
+                              </button>
+                          </div>
+                        </td>
                       </tr>
-                  )}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

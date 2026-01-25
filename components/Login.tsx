@@ -24,21 +24,27 @@ const Login: React.FC<LoginProps> = ({
     e.preventDefault();
     setError('');
 
+    // Nettoyage strict des saisies
     const cleanUsername = username.trim().toLowerCase();
+    const cleanPassword = password.trim(); // Pas de lowercase pour le mot de passe
     const cleanCode = plantationCode.trim().toUpperCase();
 
-    // Recherche de l'utilisateur avec une logique plus souple
+    console.log("Tentative de connexion pour:", cleanUsername, cleanCode);
+
+    // Recherche de l'utilisateur
     const user = users.find(u => {
-      const sameName = u.username.toLowerCase() === cleanUsername;
-      const samePass = u.password === password;
+      // Comparaison du nom (insensible à la casse)
+      const sameName = u.username.toLowerCase().trim() === cleanUsername;
+      // Comparaison du mot de passe (sensible à la casse)
+      const samePass = u.password?.trim() === cleanPassword;
       
-      // Si c'est le Super Admin, on ignore le code plantation
+      // Si c'est le Super Admin MiguelF
       if (u.role === UserRole.SUPER_ADMIN) {
         return sameName && samePass;
       }
       
-      // Pour les autres, le nom, le pass ET le code plantation doivent correspondre
-      const sameCode = u.plantationId === cleanCode;
+      // Pour les comptes clients standards
+      const sameCode = u.plantationId.trim().toUpperCase() === cleanCode;
       return sameName && samePass && sameCode;
     });
 
@@ -51,7 +57,6 @@ const Login: React.FC<LoginProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 px-6 py-12 transition-colors font-sans overflow-hidden">
-      {/* Boutons de réglages rapides - Plus gros pour Android */}
       <div className="fixed top-6 right-6 flex space-x-3 z-50">
         <button onClick={onLanguageToggle} className="w-12 h-12 flex items-center justify-center text-[10px] font-black dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg transition-transform active:scale-90 uppercase tracking-widest">
           {language}
@@ -62,7 +67,6 @@ const Login: React.FC<LoginProps> = ({
       </div>
 
       <div className="w-full max-w-md relative">
-        {/* Décoration de fond pour Android */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-green-500/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -z-10"></div>
 
