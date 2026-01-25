@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -11,7 +12,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2950/2950143.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2522/2522513.png">
 
     <!-- Tailwind CSS (Development Mode) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,6 +40,8 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 
     <script type="importmap">
@@ -57,7 +60,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900 transition-colors duration-200">
     <div id="root"></div>
-    <!-- Script principal de l'application -->
     <script type="module" src="index.tsx"></script>
 </body>
 </html>
