@@ -14,7 +14,6 @@ import ChatBot from './components/ChatBot.tsx';
 import TutorialModule from './components/TutorialModule.tsx';
 import ProductionModule from './components/ProductionModule.tsx';
 import SuperAdminModule from './components/SuperAdminModule.tsx';
-import { syncDataWithServer } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
@@ -47,7 +46,7 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const t = TRANSLATIONS[state.language];
 
-  // Détection du lien Magic Configuration
+  // Magic Configuration Link Detection
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const configData = params.get('config');
@@ -59,11 +58,10 @@ const App: React.FC = () => {
           plantations: [...prev.plantations, ...(decoded.plantations || [])].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
           users: [...prev.users, ...(decoded.users || [])].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
         }));
-        // Nettoyer l'URL
         window.history.replaceState({}, document.title, window.location.pathname);
-        alert("✅ Configuration activée avec succès ! Vous pouvez vous connecter.");
+        alert("✅ Configuration activée avec succès !");
       } catch (e) {
-        console.error("Erreur de décodage config", e);
+        console.error("Erreur configuration", e);
       }
     }
   }, []);
@@ -116,7 +114,7 @@ const App: React.FC = () => {
     if (isAccessSuspended) return;
     const newSale = { ...sale, id: Date.now().toString(), plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false };
     setState(prev => ({ ...prev, sales: [newSale, ...prev.sales] }));
-    addNotification({ type: 'ALERT', message: `Vente de ${sale.quantity}L par ${state.currentUser!.username}` });
+    addNotification({ type: 'ALERT', message: `Vente : ${sale.quantity}L (${state.currentUser!.username})` });
   };
 
   const renderContent = () => {
@@ -126,10 +124,11 @@ const App: React.FC = () => {
 
     if (isAccessSuspended) {
         return (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white dark:bg-slate-800 rounded-[3rem] shadow-xl">
-                <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-5xl mb-6">🔒</div>
-                <h2 className="text-3xl font-black text-slate-800 dark:text-white">Accès Suspendu</h2>
-                <p className="text-slate-500 mt-4 max-w-md">Veuillez contacter <b>MiguelF</b> pour activer votre abonnement.</p>
+            <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl animate-in zoom-in">
+                <div className="w-32 h-32 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-7xl mb-8">🛑</div>
+                <h2 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Abonnement Expiré</h2>
+                <p className="text-slate-500 mt-6 max-w-md text-lg">L'accès à votre plantation est actuellement suspendu. Veuillez contacter <b>MiguelF</b> pour régulariser votre compte et activer vos services.</p>
+                <button onClick={handleLogout} className="mt-10 px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Retour à la connexion</button>
             </div>
         );
     }
