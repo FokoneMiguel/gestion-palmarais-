@@ -8,7 +8,9 @@ interface SuperAdminModuleProps {
 }
 
 const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t }) => {
-  const [newPlantation, setNewPlantation] = useState({ name: '', owner: '', email: '' });
+  const [newPlantation, setNewPlantation] = useState({ 
+    name: '', owner: '', email: '', adminUsername: 'admin', adminPassword: '' 
+  });
   const [showCode, setShowCode] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -22,8 +24,17 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
 
   const shareWhatsApp = (pId: string) => {
     const p = state.plantations.find(pl => pl.id === pId);
+    const adminUser = state.users.find(u => u.plantationId === pId && u.role === UserRole.ADMIN);
     const link = generateActivationLink(pId);
-    const message = `*PLAMERAIE BST - Accès Officiel*\n\nBonjour ${p?.ownerName},\nVoici vos accès pour la plantation *${p?.name}*.\n\n*Code:* ${pId}\n*Identifiants:* admin / admin\n\n👉 *CLIQUEZ ICI POUR ACTIVER:* ${link}`;
+    
+    const message = `*PLAMERAIE BST - Accès Officiel*\n\n` +
+      `Bonjour ${p?.ownerName},\n` +
+      `Voici vos accès pour la plantation *${p?.name}*.\n\n` +
+      `*Code:* ${pId}\n` +
+      `*Identifiant:* ${adminUser?.username}\n` +
+      `*Mot de passe:* ${adminUser?.password}\n\n` +
+      `👉 *CLIQUEZ ICI POUR ACTIVER:* ${link}`;
+      
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -51,24 +62,49 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
   const addPlantation = (e: React.FormEvent) => {
     e.preventDefault();
     const id = `PALM-${Math.floor(100 + Math.random() * 899)}`;
+    
     const plantation: Plantation = {
-      id, name: newPlantation.name, ownerName: newPlantation.owner, contactEmail: newPlantation.email,
-      status: 'ACTIVE', expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      id, 
+      name: newPlantation.name, 
+      ownerName: newPlantation.owner, 
+      contactEmail: newPlantation.email,
+      status: 'ACTIVE', 
+      expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
-    const defaultAdmin: User = { id: `user-${Date.now()}`, username: 'admin', password: 'admin', role: UserRole.ADMIN, plantationId: id };
 
-    setState(prev => ({ ...prev, plantations: [...prev.plantations, plantation], users: [...prev.users, defaultAdmin] }));
+    const adminUser: User = { 
+      id: `user-${Date.now()}`, 
+      username: newPlantation.adminUsername, 
+      password: newPlantation.adminPassword || '1234', 
+      role: UserRole.ADMIN, 
+      plantationId: id 
+    };
+
+    setState(prev => ({ 
+      ...prev, 
+      plantations: [...prev.plantations, plantation], 
+      users: [...prev.users, adminUser] 
+    }));
+
     setShowCode(id);
-    setNewPlantation({ name: '', owner: '', email: '' });
+    setNewPlantation({ name: '', owner: '', email: '', adminUsername: 'admin', adminPassword: '' });
   };
 
   const handleUpdateCreds = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingUser) {
-      setState(prev => ({ ...prev, users: prev.users.map(u => u.id === editingUser.id ? editingUser : u) }));
+      setState(prev => ({ 
+        ...prev, 
+        users: prev.users.map(u => u.id === editingUser.id ? editingUser : u) 
+      }));
       setEditingUser(null);
       alert("Identifiants mis à jour !");
     }
+  };
+
+  const openEditModal = (pId: string) => {
+    const admin = state.users.find(u => u.plantationId === pId && u.role === UserRole.ADMIN);
+    if (admin) setEditingUser({ ...admin });
   };
 
   return (
@@ -82,27 +118,42 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Formulaire de création */}
         <div className="lg:col-span-1 bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700">
           <h3 className="text-xl font-black mb-6 dark:text-white flex items-center">
             <span className="mr-2">➕</span> Nouveau Client
           </h3>
           <form onSubmit={addPlantation} className="space-y-5">
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Nom de la Palmeraie</label>
-              <input required placeholder="Ex: Avocatier Sud" value={newPlantation.name} onChange={e => setNewPlantation({...newPlantation, name: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-2xl outline-none dark:text-white font-bold transition-all focus:ring-2 focus:ring-green-500" />
+            <div className="space-y-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nom Palmeraie</label>
+                <input required placeholder="Ex: Avocatier Sud" value={newPlantation.name} onChange={e => setNewPlantation({...newPlantation, name: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nom Gérant</label>
+                <input required placeholder="M. Kouamé" value={newPlantation.owner} onChange={e => setNewPlantation({...newPlantation, owner: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+              </div>
             </div>
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Nom du Gérant</label>
-              <input required placeholder="M. Kouamé" value={newPlantation.owner} onChange={e => setNewPlantation({...newPlantation, owner: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-2xl outline-none dark:text-white font-bold transition-all focus:ring-2 focus:ring-green-500" />
+            
+            <div className="space-y-4 pt-2">
+              <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">Accès Client</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Identifiant</label>
+                  <input required placeholder="admin" value={newPlantation.adminUsername} onChange={e => setNewPlantation({...newPlantation, adminUsername: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Mot de passe</label>
+                  <input required placeholder="Code..." value={newPlantation.adminPassword} onChange={e => setNewPlantation({...newPlantation, adminPassword: e.target.value})} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Contact Email</label>
-              <input required type="email" placeholder="client@palmeraie.com" value={newPlantation.email} onChange={e => setNewPlantation({...newPlantation, email: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-2xl outline-none dark:text-white font-bold transition-all focus:ring-2 focus:ring-green-500" />
-            </div>
-            <button className="w-full bg-green-700 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-green-800 transition-all transform active:scale-95 uppercase text-xs tracking-widest">Générer Accès</button>
+            
+            <button className="w-full bg-green-700 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-green-800 transition-all transform active:scale-95 uppercase text-xs tracking-widest mt-4">Générer Accès</button>
           </form>
         </div>
 
+        {/* Liste Interactive des Entreprises */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center px-4">
             <h3 className="text-xl font-black text-slate-800 dark:text-white">Vos Palmeraies</h3>
@@ -111,6 +162,7 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
 
           <div className="space-y-4">
             {state.plantations.filter(p => p.id !== 'SYSTEM').map(p => {
+              const admin = state.users.find(u => u.plantationId === p.id && u.role === UserRole.ADMIN);
               const activityCount = state.activities.filter(a => a.plantationId === p.id).length;
               const salesTotal = state.sales.filter(s => s.plantationId === p.id).reduce((sum, s) => sum + s.total, 0);
 
@@ -121,13 +173,13 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
                       <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl shadow-inner ${p.status === 'SUSPENDED' ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-600'}`}>
                         {p.status === 'SUSPENDED' ? '🚫' : '🌴'}
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
-                          <h4 className="font-black text-lg text-slate-800 dark:text-white">{p.name}</h4>
-                          <span className="bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded-lg text-[10px] font-mono font-black text-green-600">{p.id}</span>
+                          <h4 className="font-black text-lg text-slate-800 dark:text-white truncate">{p.name}</h4>
+                          <span className="bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded-lg text-[10px] font-mono font-black text-green-600 shrink-0">{p.id}</span>
                         </div>
-                        <p className="text-xs font-bold text-slate-400">{p.ownerName} • {p.contactEmail}</p>
-                        <div className="flex space-x-3 mt-2">
+                        <p className="text-xs font-bold text-slate-400 mb-2 truncate">{p.ownerName} • Admin: <span className="text-slate-600 dark:text-slate-300 font-black">{admin?.username}</span></p>
+                        <div className="flex space-x-3">
                           <span className="text-[10px] font-black uppercase text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg">📈 {activityCount} Opérations</span>
                           <span className="text-[10px] font-black uppercase text-green-500 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-lg">💰 {salesTotal.toLocaleString()} FCFA</span>
                         </div>
@@ -135,13 +187,16 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <button onClick={() => shareWhatsApp(p.id)} className="flex-1 md:flex-none bg-[#25D366] text-white px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2 shadow-lg shadow-green-500/20 hover:scale-105 transition-transform">
+                      <button onClick={() => shareWhatsApp(p.id)} className="bg-[#25D366] text-white px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2 shadow-lg hover:scale-105 transition-transform">
                         <span>WhatsApp Client</span>
                       </button>
-                      <button onClick={() => toggleSuspension(p.id)} className={`flex-1 md:flex-none px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border-2 transition-all ${p.status === 'ACTIVE' ? 'border-amber-100 text-amber-600 hover:bg-amber-50' : 'border-green-100 text-green-600 hover:bg-green-50'}`}>
-                        {p.status === 'ACTIVE' ? 'Suspendre' : 'Réactiver'}
+                      <button onClick={() => openEditModal(p.id)} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                        Accès
                       </button>
-                      <button onClick={() => deletePlantation(p.id)} className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm">
+                      <button onClick={() => toggleSuspension(p.id)} className={`px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border-2 transition-all ${p.status === 'ACTIVE' ? 'border-amber-100 text-amber-600 hover:bg-amber-50' : 'border-green-100 text-green-600 hover:bg-green-50'}`}>
+                        {p.status === 'ACTIVE' ? 'Suspendre' : 'Activer'}
+                      </button>
+                      <button onClick={() => deletePlantation(p.id)} className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all">
                         🗑️
                       </button>
                     </div>
@@ -152,6 +207,31 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t 
           </div>
         </div>
       </div>
+
+      {/* Modal Modification Admin Client */}
+      {editingUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md">
+           <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-[3rem] p-10 border border-slate-700 shadow-2xl animate-in zoom-in">
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">🔑</div>
+                <h3 className="text-2xl font-black dark:text-white">Modifier Accès Client</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-1">Plantation: {state.plantations.find(pl => pl.id === editingUser.plantationId)?.name}</p>
+              </div>
+              <form onSubmit={handleUpdateCreds} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Identifiant</label>
+                  <input required value={editingUser.username} onChange={e => setEditingUser({...editingUser, username: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mot de passe</label>
+                  <input required value={editingUser.password} onChange={e => setEditingUser({...editingUser, password: e.target.value})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                </div>
+                <button type="submit" className="w-full py-5 bg-green-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-green-800 transition-all mt-4">Enregistrer</button>
+                <button type="button" onClick={() => setEditingUser(null)} className="w-full py-4 text-slate-400 font-bold text-xs uppercase hover:text-slate-600">Fermer</button>
+              </form>
+           </div>
+        </div>
+      )}
 
       {showCode && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-green-900/60 backdrop-blur-xl">
