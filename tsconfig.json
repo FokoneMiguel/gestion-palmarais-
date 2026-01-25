@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -14,7 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react- Moran",
+    "jsx": "react-jsx",
     "jsxImportSource": "react"
   },
   "include": ["./**/*.ts", "./**/*.tsx"],
