@@ -18,9 +18,7 @@ import SuperAdminModule from './components/SuperAdminModule.tsx';
 import { syncDataWithServer } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
-  { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
-  { id: 'admin-bst', username: 'admin', role: UserRole.ADMIN, password: 'admin', plantationId: 'BST-001' },
-  { id: 'worker-bst', username: 'worker', role: UserRole.EMPLOYEE, password: 'worker', plantationId: 'BST-001' }
+  { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' }
 ];
 
 const INITIAL_PLANTATIONS: Plantation[] = [
@@ -52,7 +50,7 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [importStatus, setImportStatus] = useState<{success: boolean, message: string} | null>(null);
 
-  // LOGIQUE DU LIEN MAGIQUE (Auto-Config)
+  // LOGIQUE DU LIEN MAGIQUE (Auto-Config au démarrage)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const configData = urlParams.get('config');
@@ -61,53 +59,46 @@ const App: React.FC = () => {
       try {
         const decoded = JSON.parse(atob(configData));
         setState(prev => {
-          // Fusion intelligente : on ne garde que MiguelF (SuperAdmin) et on ajoute les nouvelles données
           const masterAccount = prev.users.find(u => u.role === UserRole.SUPER_ADMIN);
+          // On ajoute les nouvelles données reçues sans écraser le compte SuperAdmin
           const newUsers = decoded.users || [];
           const mergedUsers = masterAccount ? [masterAccount, ...newUsers.filter((u: User) => u.role !== UserRole.SUPER_ADMIN)] : newUsers;
           
-          const newState = {
+          return {
             ...prev,
-            plantations: decoded.plantations || prev.plantations,
-            users: mergedUsers,
-            activities: decoded.activities || prev.activities,
-            sales: decoded.sales || prev.sales,
-            cashMovements: decoded.cashMovements || prev.cashMovements
+            plantations: [...prev.plantations, ...(decoded.plantations || [])].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i),
+            users: mergedUsers.filter((v: any, i: any, a: any) => a.findIndex((t: any) => t.id === v.id) === i),
+            activities: [...prev.activities, ...(decoded.activities || [])],
+            sales: [...prev.sales, ...(decoded.sales || [])],
+            cashMovements: [...prev.cashMovements, ...(decoded.cashMovements || [])]
           };
-          localStorage.setItem('plameraie_db_v3', JSON.stringify(newState));
-          return newState;
         });
-        setImportStatus({ success: true, message: "Configuration reçue ! Vous pouvez vous connecter." });
-        // Nettoyer l'URL
+        setImportStatus({ success: true, message: "Invitation acceptée ! Connectez-vous maintenant." });
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (e) {
-        setImportStatus({ success: false, message: "Le lien de configuration est invalide." });
+        setImportStatus({ success: false, message: "Lien d'invitation invalide." });
       }
     }
   }, []);
 
+  // CYCLE DE SYNCHRONISATION AUTOMATIQUE (Polling)
+  useEffect(() => {
+    if (state.currentUser && state.isOnline) {
+      // Sync immédiate au login
+      syncDataWithServer(state, setState);
+
+      // Puis toutes les 30 secondes pour le "temps réel" équipe
+      const interval = setInterval(() => {
+        syncDataWithServer(state, setState);
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [state.currentUser, state.isOnline]);
+
   useEffect(() => {
     localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
   }, [state]);
-
-  useEffect(() => {
-    const handleOnline = () => setState(prev => ({ ...prev, isOnline: true }));
-    const handleOffline = () => setState(prev => ({ ...prev, isOnline: false }));
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (state.isOnline && !state.isSyncing && state.currentUser) syncDataWithServer(state, setState);
-  }, [state.isOnline, state.activities, state.sales, state.cashMovements, state.currentUser]);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', state.theme === 'dark');
-  }, [state.theme]);
 
   const t = TRANSLATIONS[state.language];
 
@@ -131,7 +122,7 @@ const App: React.FC = () => {
     if (isAccessSuspended) return;
     const newActivity = { 
         ...activity, 
-        id: Date.now().toString(), 
+        id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, 
         plantationId: state.currentUser!.plantationId, 
         updatedAt: Date.now(), 
         synced: false 
@@ -147,13 +138,14 @@ const App: React.FC = () => {
     if (isAccessSuspended) {
         return (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center text-5xl mb-6">🔒</div>
+                <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center text-5xl mb-6 shadow-xl">🔒</div>
                 <h2 className="text-3xl font-black text-slate-800 dark:text-white">Accès Suspendu</h2>
-                <p className="text-slate-500 mt-4 max-w-md">Veuillez contacter MiguelF pour régulariser votre situation.</p>
+                <p className="text-slate-500 mt-4 max-w-md font-medium">L'accès de votre plantation a été suspendu par l'administrateur système.</p>
             </div>
         );
     }
 
+    // Vue filtrée pour l'utilisateur (Uniquement sa plantation)
     const scopedState = { ...state, 
         activities: state.activities.filter(a => a.plantationId === state.currentUser?.plantationId),
         sales: state.sales.filter(s => s.plantationId === state.currentUser?.plantationId),
@@ -167,7 +159,7 @@ const App: React.FC = () => {
       case 'harvest': return <ActivityModule type="HARVEST" state={scopedState} onAdd={addActivity} t={t} />;
       case 'production': return <ProductionModule state={scopedState} onAdd={addActivity} t={t} />;
       case 'packaging': return <ActivityModule type="PACKAGING" state={scopedState} onAdd={addActivity} t={t} />;
-      case 'sales': return <SalesModule state={scopedState} onAdd={(s: any) => { if (!isAccessSuspended) { const ns = { ...s, id: Date.now().toString(), plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false }; setState(p => ({ ...p, sales: [ns, ...p.sales] })) }}} t={t} />;
+      case 'sales': return <SalesModule state={scopedState} onAdd={(s: any) => { if (!isAccessSuspended) { const ns = { ...s, id: `sale-${Date.now()}`, plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false }; setState(p => ({ ...p, sales: [ns, ...p.sales] })) }}} t={t} />;
       case 'cash': return <CashModule state={scopedState} t={t} />;
       case 'stats': return <StatsModule state={scopedState} t={t} />;
       case 'users': return <UserManagement state={state} setState={setState} t={t} />;
@@ -180,9 +172,9 @@ const App: React.FC = () => {
     return (
       <>
         {importStatus && (
-          <div className={`fixed top-0 left-0 right-0 z-[100] p-4 text-center text-white font-black uppercase text-xs tracking-widest animate-in slide-in-from-top duration-500 ${importStatus.success ? 'bg-green-600' : 'bg-red-600'}`}>
+          <div className={`fixed top-0 left-0 right-0 z-[100] p-4 text-center text-white font-black uppercase text-xs tracking-widest animate-in slide-in-from-top duration-500 shadow-xl ${importStatus.success ? 'bg-green-600' : 'bg-red-600'}`}>
             {importStatus.message}
-            <button onClick={() => setImportStatus(null)} className="ml-4 underline">Fermer</button>
+            <button onClick={() => setImportStatus(null)} className="ml-4 bg-white/20 px-3 py-1 rounded-lg">OK</button>
           </div>
         )}
         <Login 

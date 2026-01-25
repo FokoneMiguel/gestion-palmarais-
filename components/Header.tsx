@@ -44,13 +44,21 @@ const Header: React.FC<HeaderProps> = ({
             placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-100/50 dark:bg-slate-700/50 border-none rounded-[1.5rem] focus:ring-4 focus:ring-green-500/10 text-sm transition-all dark:text-white placeholder:text-slate-400 font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-slate-100/50 dark:bg-slate-700/50 border-none rounded-[1.5rem] focus:ring-4 focus:ring-green-500/10 text-sm transition-all dark:text-white placeholder:text-slate-400 font-bold"
           />
         </div>
       </div>
 
       <div className="flex items-center space-x-2 md:space-x-4">
-        {/* Notifications */}
+        {/* Indicateur de Sync Équipe */}
+        <div className="hidden lg:flex items-center space-x-2 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-2xl border border-green-100 dark:border-green-900/30">
+          <div className="flex space-x-1">
+             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
+             <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+          </div>
+          <span className="text-[9px] font-black text-green-700 dark:text-green-400 uppercase tracking-widest">Équipe Connectée</span>
+        </div>
+
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setShowNotifs(!showNotifs)}
