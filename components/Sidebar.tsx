@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { UserRole } from '../types';
 
 interface SidebarProps {
@@ -7,11 +7,11 @@ interface SidebarProps {
   userRole: UserRole;
   t: any;
   onLogout: () => void;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole, t, onLogout }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole, t, onLogout, isOpen, setIsOpen }) => {
   const menuItems = [
     { id: 'dashboard', label: t.dashboard, icon: '📊', restricted: false },
     { id: 'creation', label: t.creation, icon: '🌱', restricted: false },
@@ -34,37 +34,32 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole, t,
 
   return (
     <>
-      {/* Overlay pour Mobile */}
+      {/* Overlay Mobile Plein Écran */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] md:hidden"
+          className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[150] md:hidden animate-in fade-in duration-300"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Bouton Toggle Mobile amélioré */}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 left-6 z-[100] md:hidden bg-green-700 text-white w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center text-2xl transform active:scale-90 transition-transform"
-      >
-        {isOpen ? '✕' : '☰'}
-      </button>
-
       <aside className={`
-        fixed inset-y-0 left-0 z-[100] w-72 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700
-        transform transition-all duration-300 ease-in-out md:relative md:translate-x-0
-        ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full shadow-none'}
+        fixed inset-y-0 left-0 z-[160] w-full sm:w-80 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700
+        transform transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) md:relative md:translate-x-0 md:w-72
+        ${isOpen ? 'translate-x-0' : '-translate-x-full shadow-none'}
       `}>
-        <div className="h-full flex flex-col p-6">
-          <div className="flex items-center space-x-3 px-2 py-4 mb-8">
-            <div className="w-12 h-12 bg-green-700 rounded-2xl flex items-center justify-center text-2xl text-white font-black shadow-lg shadow-green-900/20">P</div>
-            <div>
-              <h1 className="text-xl font-black text-slate-800 dark:text-white tracking-tighter">Plameraie BST</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master System</p>
+        <div className="h-full flex flex-col p-8">
+          <div className="flex items-center justify-between mb-10 md:mb-12">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-green-700 rounded-2xl flex items-center justify-center text-3xl text-white font-black shadow-xl shadow-green-900/30">P</div>
+              <div>
+                <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tighter leading-none">BST</h1>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Palmeraie Pro</p>
+              </div>
             </div>
+            <button onClick={() => setIsOpen(false)} className="md:hidden w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-xl">✕</button>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto no-scrollbar">
+          <nav className="flex-1 space-y-1.5 overflow-y-auto no-scrollbar pr-2">
             {filteredItems.map(item => (
               <a
                 key={item.id}
@@ -75,33 +70,34 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, userRole, t,
                   setIsOpen(false);
                 }}
                 className={`
-                  w-full flex items-center space-x-4 px-4 py-3.5 rounded-2xl transition-all
+                  w-full flex items-center space-x-5 px-5 py-4 rounded-[1.8rem] transition-all
                   ${activeTab === item.id 
-                    ? 'bg-green-700 text-white shadow-lg shadow-green-900/20 scale-[1.02]' 
+                    ? 'bg-green-700 text-white shadow-2xl shadow-green-900/40 scale-[1.03]' 
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}
                 `}
               >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-sm font-black uppercase tracking-tight">{item.label}</span>
+                <span className="text-2xl">{item.icon}</span>
+                <span className="text-sm font-black uppercase tracking-wider">{item.label}</span>
               </a>
             ))}
           </nav>
 
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-700 mt-6 space-y-4">
-            <div className="px-4">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Session</p>
-                <div className="flex items-center space-x-2 mt-1">
-                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                   <p className="text-xs font-black text-slate-800 dark:text-slate-200">{userRole}</p>
-                </div>
-            </div>
+          <div className="pt-8 border-t border-slate-100 dark:border-slate-700 mt-8 space-y-6">
             <button
               onClick={onLogout}
-              className="w-full flex items-center space-x-4 px-4 py-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-black uppercase text-[10px] tracking-widest transition-colors"
+              className="w-full flex items-center space-x-5 px-6 py-5 rounded-[1.8rem] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all border border-transparent hover:border-red-100"
             >
-              <span className="text-xl">🚪</span>
+              <span className="text-2xl">🚪</span>
               <span>{t.logout}</span>
             </button>
+            
+            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
+               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Système</p>
+               <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <p className="text-xs font-black text-slate-700 dark:text-slate-300 truncate">{userRole}</p>
+               </div>
+            </div>
           </div>
         </div>
       </aside>

@@ -14,6 +14,7 @@ import ChatBot from './components/ChatBot.tsx';
 import TutorialModule from './components/TutorialModule.tsx';
 import ProductionModule from './components/ProductionModule.tsx';
 import SuperAdminModule from './components/SuperAdminModule.tsx';
+import { syncDataWithServer } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
@@ -43,8 +44,16 @@ const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const t = TRANSLATIONS[state.language];
+
+  // Cloud Sync Effect
+  useEffect(() => {
+    if (state.currentUser && state.isOnline) {
+      syncDataWithServer(state, setState);
+    }
+  }, [state.activities.length, state.sales.length, state.cashMovements.length]);
 
   // Magic Configuration Link Detection
   useEffect(() => {
@@ -79,10 +88,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
   }, [state]);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', state.theme === 'dark');
-  }, [state.theme]);
 
   const currentPlantation = useMemo(() => 
     state.plantations.find(p => p.id === state.currentUser?.plantationId),
@@ -126,9 +131,9 @@ const App: React.FC = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl animate-in zoom-in">
                 <div className="w-32 h-32 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-7xl mb-8">🛑</div>
-                <h2 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Abonnement Expiré</h2>
-                <p className="text-slate-500 mt-6 max-w-md text-lg">L'accès à votre plantation est actuellement suspendu. Veuillez contacter <b>MiguelF</b> pour régulariser votre compte et activer vos services.</p>
-                <button onClick={handleLogout} className="mt-10 px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Retour à la connexion</button>
+                <h2 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Accès Suspendu</h2>
+                <p className="text-slate-500 mt-6 max-w-md text-lg">Contactez <b>MiguelF</b> pour régulariser votre abonnement.</p>
+                <button onClick={handleLogout} className="mt-10 px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Déconnexion</button>
             </div>
         );
     }
@@ -167,7 +172,11 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={state.currentUser.role} t={t} onLogout={handleLogout} />
+      <Sidebar 
+        activeTab={activeTab} setActiveTab={setActiveTab} 
+        userRole={state.currentUser.role} t={t} onLogout={handleLogout} 
+        isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen}
+      />
       <div className="flex-1 flex flex-col min-w-0 relative">
         <Header 
           t={t} theme={state.theme} language={state.language} 
@@ -177,8 +186,10 @@ const App: React.FC = () => {
           user={state.currentUser} notifications={state.notifications}
           markAllRead={() => setState(p => ({ ...p, notifications: p.notifications.map(n => ({ ...n, isRead: true })) }))}
           onHelpClick={() => setActiveTab('tutorial')}
+          onMenuToggle={() => setIsSidebarOpen(true)}
+          currentPlantation={currentPlantation}
         />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">
           {renderContent()}
         </main>
       </div>
