@@ -50,6 +50,24 @@ export const TRANSLATIONS = {
     markAllRead: "Tout marquer comme lu",
     tutorialTitle: "Centre d'Apprentissage BST",
     tutorialSubtitle: "Tout ce qu'il faut savoir pour gérer votre plantation.",
+    
+    // Nouveaux champs pour ProductionModule
+    totalProcessed: "Matière traitée",
+    oilOutput: "Huile produite",
+    avgYield: "Rendement Moyen",
+    extractionRate: "Taux d'extraction",
+    produced: "Production",
+    batchHistory: "Historique des Lots",
+    rawMaterial: "Matière Première",
+    
+    opLists: {
+      CREATION: ["Délimitation", "Piquetage", "Trouaison", "Mise en terre", "Arrosage initial", "Autre..."],
+      MAINTENANCE: ["Désherbage manuel", "Élagage", "Épandage Engrais", "Traitement Phyto", "Nettoyage couronne", "Autre..."],
+      HARVEST: ["Coupe des régimes", "Ramassage", "Transport Usine", "Égrappage", "Autre..."],
+      PRODUCTION: ["Pesée", "Cuisson", "Pressage", "Clarification", "Filtration", "Autre..."],
+      PACKAGING: ["Mise en bouteille 1L", "Conditionnement 5L", "Bidons 20L", "Étiquetage", "Autre..."]
+    },
+    
     superAdmin: {
       hello: "Bonjour, MiguelF",
       welcome: "Console de Maîtrise Plameraie BST",
@@ -69,12 +87,6 @@ export const TRANSLATIONS = {
       suspend: "Suspendre",
       reactivate: "Activer",
       noClients: "Aucun client enregistré."
-    },
-    notifTexts: {
-      userLogin: "L'utilisateur {u} s'est connecté à la plantation {p}.",
-      newOp: "{u} a enregistré une opération : {op} (Zone {z})",
-      newSale: "Nouvelle vente de {qty} par {u} au client {c}.",
-      appUpdate: "Mise à jour Système : Les rapports de production sont désormais plus détaillés."
     }
   },
   EN: {
@@ -126,6 +138,23 @@ export const TRANSLATIONS = {
     markAllRead: "Mark all as read",
     tutorialTitle: "BST Learning Center",
     tutorialSubtitle: "Master your plantation management.",
+    
+    totalProcessed: "Processed Material",
+    oilOutput: "Oil Produced",
+    avgYield: "Average Yield",
+    extractionRate: "Extraction Rate",
+    produced: "Production",
+    batchHistory: "Batch History",
+    rawMaterial: "Raw Material",
+
+    opLists: {
+      CREATION: ["Boundary Setting", "Staking", "Digging", "Planting", "Initial Watering", "Other..."],
+      MAINTENANCE: ["Weeding", "Pruning", "Fertilizing", "Phyto Treatment", "Ring Cleaning", "Other..."],
+      HARVEST: ["Bunch Cutting", "Collecting", "Transport to Factory", "De-bunching", "Other..."],
+      PRODUCTION: ["Weighing", "Cooking", "Pressing", "Clarification", "Filtration", "Other..."],
+      PACKAGING: ["Bottling 1L", "Packaging 5L", "Drums 20L", "Labeling", "Other..."]
+    },
+    
     superAdmin: {
       hello: "Hello, MiguelF",
       welcome: "Plameraie BST Master Console",
@@ -145,12 +174,6 @@ export const TRANSLATIONS = {
       suspend: "Suspend",
       reactivate: "Activate",
       noClients: "No clients registered."
-    },
-    notifTexts: {
-      userLogin: "User {u} logged into plantation {p}.",
-      newOp: "{u} recorded an operation: {op} (Zone {z})",
-      newSale: "New sale of {qty} by {u} to client {c}.",
-      appUpdate: "System Update: Production reports are now more detailed."
     }
   }
 };
