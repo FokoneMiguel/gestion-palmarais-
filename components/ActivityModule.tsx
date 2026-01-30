@@ -5,11 +5,13 @@ interface ActivityModuleProps {
   type: ActivityType;
   state: AppState;
   onAdd: (activity: Omit<Activity, 'id' | 'plantationId' | 'updatedAt'>) => void;
+  onDelete?: (id: string) => void;
   t: any;
 }
 
-const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, t }) => {
+const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, onDelete, t }) => {
   const [showModal, setShowModal] = useState(false);
+  const [showDetails, setShowDetails] = useState<Activity | null>(null);
   const [customLabel, setCustomLabel] = useState(false);
   const [formData, setFormData] = useState({
     label: '',
@@ -29,6 +31,11 @@ const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, t }
         alert("Veuillez sélectionner ou saisir une opération.");
         return;
     }
+    if (formData.cost < 0) {
+        alert("Le coût ne peut pas être négatif.");
+        return;
+    }
+
     onAdd({
       type,
       label: formData.label,
@@ -46,7 +53,6 @@ const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, t }
 
   const filteredActivities = state.activities.filter(a => a.type === type);
 
-  // Correction cruciale : Définition statique des styles pour éviter le bug Tailwind
   const getModuleStyle = () => {
     switch(type) {
       case 'CREATION': return { btn: 'bg-emerald-700 hover:bg-emerald-800', text: 'text-emerald-700', bg: 'bg-emerald-50' };
@@ -84,21 +90,24 @@ const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, t }
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.zone}</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.cost}</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Équipe</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
               {filteredActivities.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center">
+                  <td colSpan={6} className="px-8 py-20 text-center">
                     <div className="opacity-20 text-5xl mb-4">🍃</div>
                     <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Aucune donnée pour {t[type.toLowerCase()]}</p>
                   </td>
                 </tr>
               ) : (
                 filteredActivities.map(activity => (
-                  <tr key={activity.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
+                  <tr key={activity.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors group">
                     <td className="px-8 py-5 text-sm font-black text-slate-500 dark:text-slate-400">{activity.date}</td>
-                    <td className="px-8 py-5 text-sm font-black text-slate-800 dark:text-white">{activity.label}</td>
+                    <td className="px-8 py-5 text-sm font-black text-slate-800 dark:text-white">
+                      {activity.label}
+                    </td>
                     <td className="px-8 py-5 text-sm">
                         <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider">{activity.zone}</span>
                     </td>
@@ -106,10 +115,16 @@ const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, t }
                     <td className="px-8 py-5">
                         <div className="flex -space-x-2">
                             {activity.workers.slice(0, 3).map((w, i) => (
-                                <div key={i} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">{w.charAt(0)}</div>
+                                <div key={i} title={w} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">{w.charAt(0)}</div>
                             ))}
                             {activity.workers.length > 3 && <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[9px] font-black">+{activity.workers.length - 3}</div>}
                         </div>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <div className="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => setShowDetails(activity)} className="p-2 text-slate-400 hover:text-green-600 transition-colors" title="Voir plus">👁️</button>
+                        {onDelete && <button onClick={() => onDelete(activity.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Supprimer">🗑️</button>}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -118,6 +133,45 @@ const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, t }
           </table>
         </div>
       </div>
+
+      {/* Modal Détails */}
+      {showDetails && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xl">
+           <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-[3rem] shadow-2xl animate-in zoom-in border border-white/10 overflow-hidden">
+              <div className={`p-8 ${styles.btn} text-white`}>
+                 <h3 className="text-2xl font-black uppercase tracking-tight">{showDetails.label}</h3>
+                 <p className="text-xs font-bold opacity-70 mt-1">{showDetails.date} • {showDetails.zone}</p>
+              </div>
+              <div className="p-10 space-y-6">
+                 <div className="grid grid-cols-2 gap-8">
+                    <div>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Coût</p>
+                       <p className="text-lg font-black dark:text-white">{showDetails.cost.toLocaleString()} FCFA</p>
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Quantité</p>
+                       <p className="text-lg font-black dark:text-white">{showDetails.quantity || 0} {showDetails.unit || 'unité(s)'}</p>
+                    </div>
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Équipe</p>
+                    <div className="flex flex-wrap gap-2">
+                       {showDetails.workers.map((w, i) => (
+                          <span key={i} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest border border-slate-200 dark:border-slate-600">{w}</span>
+                       ))}
+                    </div>
+                 </div>
+                 {showDetails.observations && (
+                   <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Observations</p>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300 italic">"{showDetails.observations}"</p>
+                   </div>
+                 )}
+                 <button onClick={() => setShowDetails(null)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Fermer</button>
+              </div>
+           </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xl">
@@ -169,17 +223,22 @@ const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, t }
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">{t.cost} (FCFA)</label>
-                        <input required type="number" value={formData.cost} onChange={e => setFormData({...formData, cost: Number(e.target.value)})} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                        <input required type="number" min="0" value={formData.cost} onChange={e => setFormData({...formData, cost: Number(e.target.value)})} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
                     </div>
                     <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">{t.quantity}</label>
-                        <input type="number" value={formData.quantity} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                        <input type="number" min="0" value={formData.quantity} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
                     </div>
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">{t.workers}</label>
                   <input type="text" value={formData.workers} onChange={e => setFormData({...formData, workers: e.target.value})} placeholder="Paul, Moussa, ..." className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">{t.observations}</label>
+                  <textarea value={formData.observations} onChange={e => setFormData({...formData, observations: e.target.value})} placeholder="Détails supplémentaires..." className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold min-h-[100px]" />
                 </div>
               </div>
               <div className="flex space-x-4 pt-4">
