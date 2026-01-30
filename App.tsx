@@ -27,8 +27,12 @@ const INITIAL_PLANTATIONS: Plantation[] = [
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('plameraie_db_v3');
-    if (saved) return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('plameraie_db_v3');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Erreur de lecture Storage", e);
+    }
     return {
       plantations: INITIAL_PLANTATIONS,
       users: INITIAL_USERS,
@@ -51,28 +55,22 @@ const App: React.FC = () => {
 
   const t = TRANSLATIONS[state.language];
 
-  // Fix: Appliquer le thème à l'élément HTML
+  // Fix critique : Appliquer le thème immédiatement à la racine
   useEffect(() => {
+    const root = window.document.documentElement;
     if (state.theme === 'dark') {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
     }
   }, [state.theme]);
 
-  // Cloud Sync Effect
-  useEffect(() => {
-    if (state.currentUser && state.isOnline) {
-      syncDataWithServer(state, setState);
-    }
-  }, [state.activities.length, state.sales.length, state.cashMovements.length]);
-
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    const id = Date.now().toString();
+    const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+    }, 3500);
   };
 
   const addNotification = (notif: Omit<Notification, 'id' | 'date' | 'isRead'>) => {
@@ -97,7 +95,7 @@ const App: React.FC = () => {
 
   const handleLogin = (user: User) => {
     setState(prev => ({ ...prev, currentUser: user }));
-    addToast(`Bienvenue, ${user.username} !`, 'success');
+    addToast(state.language === 'FR' ? `Bienvenue, ${user.username} !` : `Welcome, ${user.username}!`, 'success');
     if (user.role === UserRole.SUPER_ADMIN) {
         setActiveTab('superadmin');
     } else {
@@ -107,7 +105,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setState(prev => ({ ...prev, currentUser: null }));
-    addToast("Déconnexion réussie", 'info');
+    addToast(state.language === 'FR' ? "Déconnexion réussie" : "Logged out successfully", 'info');
   };
 
   const addActivity = (activity: any) => {
@@ -115,13 +113,14 @@ const App: React.FC = () => {
     const newActivity = { ...activity, id: Date.now().toString(), plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false };
     setState(prev => ({ ...prev, activities: [newActivity, ...prev.activities] }));
     addNotification({ type: 'SUCCESS', message: `${state.currentUser!.username} : ${activity.label}` });
-    addToast("Opération enregistrée avec succès !");
+    addToast(state.language === 'FR' ? "Opération enregistrée !" : "Operation saved!");
   };
 
   const deleteActivity = (id: string) => {
-    if (confirm("Voulez-vous vraiment supprimer cette opération ?")) {
+    const confirmMsg = state.language === 'FR' ? "Supprimer cette opération ?" : "Delete this operation?";
+    if (window.confirm(confirmMsg)) {
       setState(prev => ({ ...prev, activities: prev.activities.filter(a => a.id !== id) }));
-      addToast("Opération supprimée", 'info');
+      addToast(state.language === 'FR' ? "Supprimé avec succès" : "Deleted successfully", 'info');
     }
   };
 
@@ -129,14 +128,14 @@ const App: React.FC = () => {
     if (isAccessSuspended) return;
     const newSale = { ...sale, id: Date.now().toString(), plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false };
     setState(prev => ({ ...prev, sales: [newSale, ...prev.sales] }));
-    addNotification({ type: 'ALERT', message: `Vente : ${sale.quantity}L (${state.currentUser!.username})` });
-    addToast("Vente enregistrée !");
+    addToast(state.language === 'FR' ? "Vente enregistrée !" : "Sale recorded!");
   };
 
   const deleteSale = (id: string) => {
-    if (confirm("Supprimer cette vente ?")) {
+    const confirmMsg = state.language === 'FR' ? "Supprimer cette vente ?" : "Delete this sale?";
+    if (window.confirm(confirmMsg)) {
       setState(prev => ({ ...prev, sales: prev.sales.filter(s => s.id !== id) }));
-      addToast("Vente supprimée", 'info');
+      addToast(state.language === 'FR' ? "Vente annulée" : "Sale cancelled", 'info');
     }
   };
 
@@ -178,61 +177,50 @@ const App: React.FC = () => {
     }
   };
 
-  if (!state.currentUser) {
-    return (
-      <>
+  return (
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      {!state.currentUser ? (
         <Login 
           onLogin={handleLogin} users={state.users} t={t} theme={state.theme} language={state.language}
           onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
           onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
+          addToast={addToast}
         />
-        <div className="fixed bottom-4 left-4 z-[300] space-y-2">
-          {toasts.map(toast => (
-            <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} />
-          ))}
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
-      <Sidebar 
-        activeTab={activeTab} setActiveTab={setActiveTab} 
-        userRole={state.currentUser.role} t={t} onLogout={handleLogout} 
-        isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen}
-      />
-      <div className="flex-1 flex flex-col min-w-0 relative">
-        <Header 
-          t={t} theme={state.theme} language={state.language} 
-          onThemeToggle={() => {
-            const newTheme = state.theme === 'light' ? 'dark' : 'light';
-            setState(p => ({ ...p, theme: newTheme }));
-            addToast(`Mode ${newTheme === 'dark' ? 'sombre' : 'clair'} activé`);
-          }}
-          onLanguageToggle={() => {
-            const newLang = state.language === 'FR' ? 'EN' : 'FR';
-            setState(p => ({ ...p, language: newLang }));
-            addToast(`Langue: ${newLang}`);
-          }}
-          searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-          user={state.currentUser} notifications={state.notifications}
-          markAllRead={() => {
-            setState(p => ({ ...p, notifications: p.notifications.map(n => ({ ...n, isRead: true })) }));
-            addToast("Toutes les notifications lues");
-          }}
-          onHelpClick={() => setActiveTab('tutorial')}
-          onMenuToggle={() => setIsSidebarOpen(true)}
-          currentPlantation={currentPlantation}
-        />
-        <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">
-          {renderContent()}
-        </main>
-      </div>
-      <ChatBot state={state} t={t} />
+      ) : (
+        <>
+          <Sidebar 
+            activeTab={activeTab} setActiveTab={setActiveTab} 
+            userRole={state.currentUser.role} t={t} onLogout={handleLogout} 
+            isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen}
+          />
+          <div className="flex-1 flex flex-col min-w-0 relative">
+            <Header 
+              t={t} theme={state.theme} language={state.language} 
+              onThemeToggle={() => {
+                const newTheme = state.theme === 'light' ? 'dark' : 'light';
+                setState(p => ({ ...p, theme: newTheme }));
+              }}
+              onLanguageToggle={() => {
+                const newLang = state.language === 'FR' ? 'EN' : 'FR';
+                setState(p => ({ ...p, language: newLang }));
+              }}
+              searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+              user={state.currentUser} notifications={state.notifications}
+              markAllRead={() => setState(p => ({ ...p, notifications: p.notifications.map(n => ({ ...n, isRead: true })) }))}
+              onHelpClick={() => setActiveTab('tutorial')}
+              onMenuToggle={() => setIsSidebarOpen(true)}
+              currentPlantation={currentPlantation}
+            />
+            <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">
+              {renderContent()}
+            </main>
+          </div>
+          <ChatBot state={state} t={t} />
+        </>
+      )}
       
-      {/* Toast Container */}
-      <div className="fixed bottom-4 left-4 z-[300] space-y-2">
+      {/* Toast Container Global */}
+      <div className="fixed bottom-4 left-4 z-[500] flex flex-col space-y-2 pointer-events-none">
         {toasts.map(toast => (
           <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} />
         ))}
