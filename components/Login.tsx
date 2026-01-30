@@ -21,17 +21,20 @@ const Login: React.FC<LoginProps> = ({
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const checkCode = (username === 'MiguelF') ? 'SYSTEM' : plantationCode;
+    // Fix: Case sensitivity check for MiguelF to ensure access always works
+    const isMaster = username.trim().toLowerCase() === 'miguelf';
+    const checkCode = isMaster ? 'SYSTEM' : plantationCode.trim().toUpperCase();
+    
     const user = users.find(u => 
-        u.username.toLowerCase() === username.toLowerCase() && 
+        u.username.toLowerCase() === username.trim().toLowerCase() && 
         u.password === password && 
-        (checkCode === '' || u.plantationId === checkCode)
+        (isMaster || u.plantationId === checkCode)
     );
 
     if (user) {
       onLogin(user);
     } else {
-      addToast(language === 'FR' ? "Identifiants invalides" : "Invalid credentials", 'error');
+      addToast(t.invalidCredentials, 'error');
     }
   };
 
@@ -48,7 +51,7 @@ const Login: React.FC<LoginProps> = ({
             P
           </div>
           <h1 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Plameraie BST</h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">{t.loginSubtitle || (language === 'FR' ? "Accès sécurisé" : "Secure access")}</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">{t.loginSubtitle}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-700 relative overflow-hidden">
@@ -56,11 +59,12 @@ const Login: React.FC<LoginProps> = ({
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">{language === 'FR' ? "Code Plantation" : "Plantation Code"}</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">{t.plantationCode}</label>
               <input 
-                type="text" value={plantationCode} onChange={e => setPlantationCode(e.target.value.toUpperCase())}
+                type="text" value={plantationCode} onChange={e => setPlantationCode(e.target.value)}
                 placeholder="Ex: PALM-123"
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold"
+                disabled={username.trim().toLowerCase() === 'miguelf'}
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold disabled:opacity-50"
               />
             </div>
 

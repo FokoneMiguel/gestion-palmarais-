@@ -48,9 +48,9 @@ const ChatBot: React.FC<{ state: AppState; t: any }> = ({ state, t }) => {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-x-4 bottom-24 md:inset-auto md:right-6 md:bottom-32 z-50 md:w-[450px] h-[70vh] max-h-[600px] bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 animate-in slide-in-from-bottom-10">
+        <div className="fixed inset-x-4 bottom-24 md:inset-auto md:right-6 md:bottom-32 z-50 md:w-[450px] h-[70vh] max-h-[600px] bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 animate-in slide-in-from-bottom-10 overflow-hidden">
           {/* Header */}
-          <div className="p-6 bg-amber-600 text-white flex items-center justify-between rounded-t-[3rem]">
+          <div className="p-6 bg-amber-600 text-white flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">✨</div>
               <p className="font-black uppercase tracking-tight">BST Expert AI</p>
@@ -67,20 +67,25 @@ const ChatBot: React.FC<{ state: AppState; t: any }> = ({ state, t }) => {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white dark:bg-slate-700 px-5 py-3 rounded-2xl animate-pulse text-xs font-black uppercase text-slate-400">IA réfléchit...</div>
+              </div>
+            )}
             <div ref={chatEndRef} />
           </div>
 
           {/* Input - Fix visibilité bouton */}
-          <div className="p-4 bg-white dark:bg-slate-800 rounded-b-[3rem] border-t border-slate-100 dark:border-slate-700">
-            <div className="flex space-x-2">
+          <div className="p-4 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shrink-0">
+            <div className="flex items-center space-x-2">
               <input 
                 value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()}
                 placeholder="Votre question..."
-                className="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none"
+                className="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none min-w-0"
               />
               <button 
                 onClick={handleSend} disabled={!input.trim() || isLoading}
-                className="bg-amber-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50"
+                className="bg-amber-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50 shrink-0"
               >
                 🚀
               </button>

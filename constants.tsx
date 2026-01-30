@@ -20,8 +20,12 @@ export const TRANSLATIONS = {
     netBalance: "Solde Net",
     addOperation: "Ajouter une Opération",
     login: "Connexion",
+    loginSubtitle: "Accès sécurisé",
+    invalidCredentials: "Identifiants invalides",
+    welcome: "Bienvenue",
     username: "Nom d'utilisateur",
     password: "Mot de passe",
+    plantationCode: "Code Plantation",
     role: "Rôle",
     admin: "Administrateur",
     employee: "Employé",
@@ -50,6 +54,12 @@ export const TRANSLATIONS = {
     markAllRead: "Tout marquer comme lu",
     tutorialTitle: "Centre d'Apprentissage BST",
     tutorialSubtitle: "Tout ce qu'il faut savoir pour gérer votre plantation.",
+    totalActivities: "Activités totales",
+    systemConnected: "Système Connecté",
+    dashboardSubtitle: "Synthèse globale de la plantation en temps réel.",
+    viewAllLog: "Voir tout le journal",
+    nothingToReport: "Rien à signaler",
+    estate: "DOMAINE",
     
     // Nouveaux champs pour ProductionModule
     totalProcessed: "Matière traitée",
@@ -59,6 +69,7 @@ export const TRANSLATIONS = {
     produced: "Production",
     batchHistory: "Historique des Lots",
     rawMaterial: "Matière Première",
+    yield: "Rendement",
     
     opLists: {
       CREATION: ["Délimitation", "Piquetage", "Trouaison", "Mise en terre", "Arrosage initial", "Autre..."],
@@ -108,8 +119,12 @@ export const TRANSLATIONS = {
     netBalance: "Net Balance",
     addOperation: "Add Operation",
     login: "Login",
+    loginSubtitle: "Secure access",
+    invalidCredentials: "Invalid credentials",
+    welcome: "Welcome",
     username: "Username",
     password: "Password",
+    plantationCode: "Plantation Code",
     role: "Role",
     admin: "Administrator",
     employee: "Employee",
@@ -138,6 +153,12 @@ export const TRANSLATIONS = {
     markAllRead: "Mark all as read",
     tutorialTitle: "BST Learning Center",
     tutorialSubtitle: "Master your plantation management.",
+    totalActivities: "Total Activities",
+    systemConnected: "System Connected",
+    dashboardSubtitle: "Global plantation summary in real-time.",
+    viewAllLog: "View full log",
+    nothingToReport: "Nothing to report",
+    estate: "ESTATE",
     
     totalProcessed: "Processed Material",
     oilOutput: "Oil Produced",
@@ -146,6 +167,7 @@ export const TRANSLATIONS = {
     produced: "Production",
     batchHistory: "Batch History",
     rawMaterial: "Raw Material",
+    yield: "Yield",
 
     opLists: {
       CREATION: ["Boundary Setting", "Staking", "Digging", "Planting", "Initial Watering", "Other..."],
