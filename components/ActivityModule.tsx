@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ActivityType, AppState, Activity } from '../types';
 
@@ -223,11 +224,23 @@ const ActivityModule: React.FC<ActivityModuleProps> = ({ type, state, onAdd, onD
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">{t.cost} (FCFA)</label>
-                        <input required type="number" min="0" value={formData.cost} onChange={e => setFormData({...formData, cost: Number(e.target.value)})} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                        <input 
+                          required type="number" min="0" 
+                          value={formData.cost} 
+                          onFocus={(e) => e.target.select()}
+                          onChange={e => setFormData({...formData, cost: Number(e.target.value)})} 
+                          className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" 
+                        />
                     </div>
                     <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">{t.quantity}</label>
-                        <input type="number" min="0" value={formData.quantity} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                        <input 
+                          type="number" min="0" 
+                          value={formData.quantity} 
+                          onFocus={(e) => e.target.select()}
+                          onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} 
+                          className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" 
+                        />
                     </div>
                 </div>
 

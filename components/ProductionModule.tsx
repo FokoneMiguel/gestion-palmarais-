@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { AppState, Activity } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -260,18 +261,36 @@ const ProductionModule: React.FC<ProductionModuleProps> = ({ state, onAdd, onDel
                 <div className="grid grid-cols-2 gap-4 p-6 bg-amber-50 dark:bg-amber-900/10 rounded-3xl border border-amber-100 dark:border-amber-900/20">
                   <div className="space-y-1">
                     <label className="block text-[10px] font-black text-amber-600 uppercase tracking-widest">Matière (kg)</label>
-                    <input required type="number" min="1" value={formData.inputQuantity} onChange={e => setFormData({...formData, inputQuantity: Number(e.target.value)})} className="w-full bg-transparent text-2xl font-black text-amber-700 dark:text-amber-400 outline-none" />
+                    <input 
+                      required type="number" min="1" 
+                      value={formData.inputQuantity} 
+                      onFocus={(e) => e.target.select()}
+                      onChange={e => setFormData({...formData, inputQuantity: Number(e.target.value)})} 
+                      className="w-full bg-transparent text-2xl font-black text-amber-700 dark:text-amber-400 outline-none" 
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="block text-[10px] font-black text-amber-600 uppercase tracking-widest">Huile (L)</label>
-                    <input required type="number" min="1" value={formData.quantity} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} className="w-full bg-transparent text-2xl font-black text-amber-700 dark:text-amber-400 outline-none" />
+                    <input 
+                      required type="number" min="1" 
+                      value={formData.quantity} 
+                      onFocus={(e) => e.target.select()}
+                      onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} 
+                      className="w-full bg-transparent text-2xl font-black text-amber-700 dark:text-amber-400 outline-none" 
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">{t.cost} (FCFA)</label>
-                    <input required type="number" min="0" value={formData.cost} onChange={e => setFormData({...formData, cost: Number(e.target.value)})} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" />
+                    <input 
+                      required type="number" min="0" 
+                      value={formData.cost} 
+                      onFocus={(e) => e.target.select()}
+                      onChange={e => setFormData({...formData, cost: Number(e.target.value)})} 
+                      className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold" 
+                    />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Équipe</label>

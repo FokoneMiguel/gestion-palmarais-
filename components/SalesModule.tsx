@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { AppState, Sale } from '../types';
 
@@ -190,11 +191,23 @@ const SalesModule: React.FC<SalesModuleProps> = ({ state, onAdd, onDelete, t }) 
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">{t.quantity} (L)</label>
-                  <input required type="number" min="1" value={formData.quantity} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none font-bold dark:text-white" />
+                  <input 
+                    required type="number" min="1" 
+                    value={formData.quantity} 
+                    onFocus={(e) => e.target.select()}
+                    onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} 
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none font-bold dark:text-white" 
+                  />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1 tracking-widest">P.U (FCFA)</label>
-                  <input required type="number" min="1" value={formData.unitPrice} onChange={e => setFormData({...formData, unitPrice: Number(e.target.value)})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none font-bold dark:text-white" />
+                  <input 
+                    required type="number" min="1" 
+                    value={formData.unitPrice} 
+                    onFocus={(e) => e.target.select()}
+                    onChange={e => setFormData({...formData, unitPrice: Number(e.target.value)})} 
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none font-bold dark:text-white" 
+                  />
                 </div>
               </div>
               <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-3xl flex justify-between items-center border border-slate-100 dark:border-slate-700">
