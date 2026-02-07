@@ -22,6 +22,9 @@ export const TRANSLATIONS = {
     login: "Connexion",
     loginSubtitle: "Accès sécurisé",
     invalidCredentials: "Identifiants invalides",
+    errCode: "Code Plantation incorrect ❌",
+    errUser: "Utilisateur inconnu 👤",
+    errPass: "Mot de passe erroné 🔑",
     welcome: "Bienvenue",
     username: "Nom d'utilisateur",
     password: "Mot de passe",
@@ -52,8 +55,8 @@ export const TRANSLATIONS = {
     notifications: "Notifications",
     noNotifications: "Aucune notification",
     markAllRead: "Tout marquer comme lu",
-    tutorialTitle: "Centre d'Apprentissage BST",
-    tutorialSubtitle: "Tout ce qu'il faut savoir pour gérer votre plantation.",
+    tutorialTitle: "Guide d'Utilisation Plameraie BST",
+    tutorialSubtitle: "Apprenez à maîtriser votre application étape par étape.",
     totalActivities: "Activités totales",
     systemConnected: "Système Connecté",
     dashboardSubtitle: "Synthèse globale de la plantation en temps réel.",
@@ -61,7 +64,6 @@ export const TRANSLATIONS = {
     nothingToReport: "Rien à signaler",
     estate: "DOMAINE",
     
-    // Nouveaux champs pour ProductionModule
     totalProcessed: "Matière traitée",
     oilOutput: "Huile produite",
     avgYield: "Rendement Moyen",
@@ -121,6 +123,9 @@ export const TRANSLATIONS = {
     login: "Login",
     loginSubtitle: "Secure access",
     invalidCredentials: "Invalid credentials",
+    errCode: "Invalid Plantation Code ❌",
+    errUser: "Unknown User 👤",
+    errPass: "Wrong Password 🔑",
     welcome: "Welcome",
     username: "Username",
     password: "Password",
@@ -151,8 +156,8 @@ export const TRANSLATIONS = {
     notifications: "Notifications",
     noNotifications: "No notifications",
     markAllRead: "Mark all as read",
-    tutorialTitle: "BST Learning Center",
-    tutorialSubtitle: "Master your plantation management.",
+    tutorialTitle: "Plameraie BST User Guide",
+    tutorialSubtitle: "Learn how to master your app step by step.",
     totalActivities: "Total Activities",
     systemConnected: "System Connected",
     dashboardSubtitle: "Global plantation summary in real-time.",
@@ -206,3 +211,30 @@ export const COLORS = {
   accent: "#ea580c", 
   dark: "#0f172a"
 };
+
+export const TUTORIAL_STEPS = [
+  {
+    title: "🏢 Étape 1 : Accès Administrateur",
+    description: "📝 Cliquez sur le bouton 'Créer un compte entreprise'. Remplissez le nom de votre plantation et le gérant. Un code plantation unique sera généré.",
+    tip: "💡 Conseil : Utilisez le bouton WhatsApp pour envoyer les accès directement au gérant.",
+    icon: "🏢"
+  },
+  {
+    title: "👤 Étape 2 : Création de l'Équipe",
+    description: "📝 Le gérant se connecte et va dans 'Gestion Utilisateurs' pour créer des accès pour ses ouvriers. Chaque ouvrier reçoit son propre mot de passe.",
+    tip: "💡 Conseil : Les noms d'utilisateurs doivent être simples (ex: Paul, Moussa).",
+    icon: "👤"
+  },
+  {
+    title: "🚜 Étape 3 : Saisie sur le Terrain",
+    description: "📝 Les employés ouvrent l'app sur leur téléphone et saisissent les récoltes et l'entretien. Les données remontent automatiquement au gérant.",
+    tip: "💡 Astuce : L'application fonctionne sans internet et synchronise dès que le réseau revient.",
+    icon: "✅"
+  },
+  {
+    title: "📊 Étape 4 : Analyse des Revenus",
+    description: "📝 Consultez les 'Statistiques' pour voir l'évolution de vos ventes d'huile et vos coûts de main d'œuvre. Le solde net est calculé en temps réel.",
+    tip: "💡 Conseil : Surveillez le taux d'extraction dans le module Production.",
+    icon: "📊"
+  }
+];

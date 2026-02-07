@@ -55,7 +55,7 @@ const App: React.FC = () => {
 
   const t = TRANSLATIONS[state.language];
 
-  // Fix critique : Appliquer le thème immédiatement à la racine
+  // Gestion robuste du thème
   useEffect(() => {
     const root = window.document.documentElement;
     if (state.theme === 'dark') {
@@ -63,7 +63,9 @@ const App: React.FC = () => {
     } else {
       root.classList.remove('dark');
     }
-  }, [state.theme]);
+    // On sauvegarde l'état à chaque changement
+    localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
+  }, [state.theme, state]);
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -83,10 +85,6 @@ const App: React.FC = () => {
     setState(prev => ({ ...prev, notifications: [newNotif, ...prev.notifications] }));
   };
 
-  useEffect(() => {
-    localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
-  }, [state]);
-
   const currentPlantation = useMemo(() => 
     state.plantations.find(p => p.id === state.currentUser?.plantationId),
   [state.plantations, state.currentUser]);
@@ -94,8 +92,32 @@ const App: React.FC = () => {
   const isAccessSuspended = state.currentUser?.role !== UserRole.SUPER_ADMIN && currentPlantation?.status === 'SUSPENDED';
 
   const handleLogin = (user: User) => {
-    setState(prev => ({ ...prev, currentUser: user }));
+    const isFirstLogin = !user.lastLoginAt;
+    
+    // Mettre à jour la date de dernière connexion de l'utilisateur
+    const updatedUsers = state.users.map(u => 
+      u.id === user.id ? { ...u, lastLoginAt: new Date().toISOString() } : u
+    );
+
+    setState(prev => ({ ...prev, currentUser: user, users: updatedUsers }));
+    
+    // GESTION DES NOTIFICATIONS HIÉRARCHIQUES
+    if (isFirstLogin) {
+      if (user.role === UserRole.ADMIN) {
+        addNotification({
+          type: 'SUCCESS',
+          message: `👑 Connexion : Le gérant ${user.username} (${currentPlantation?.name}) s'est connecté pour la première fois.`
+        });
+      } else if (user.role === UserRole.EMPLOYEE) {
+        addNotification({
+          type: 'INFO',
+          message: `👥 Nouvel employé : ${user.username} a activé son compte.`
+        });
+      }
+    }
+
     addToast(state.language === 'FR' ? `Bienvenue, ${user.username} !` : `Welcome, ${user.username}!`, 'success');
+    
     if (user.role === UserRole.SUPER_ADMIN) {
         setActiveTab('superadmin');
     } else {
@@ -183,7 +205,10 @@ const App: React.FC = () => {
         <Login 
           onLogin={handleLogin} users={state.users} t={t} theme={state.theme} language={state.language}
           onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
-          onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
+          onThemeToggle={() => {
+            const nextTheme = state.theme === 'light' ? 'dark' : 'light';
+            setState(p => ({ ...p, theme: nextTheme }));
+          }}
           addToast={addToast}
         />
       ) : (
@@ -197,8 +222,8 @@ const App: React.FC = () => {
             <Header 
               t={t} theme={state.theme} language={state.language} 
               onThemeToggle={() => {
-                const newTheme = state.theme === 'light' ? 'dark' : 'light';
-                setState(p => ({ ...p, theme: newTheme }));
+                const nextTheme = state.theme === 'light' ? 'dark' : 'light';
+                setState(p => ({ ...p, theme: nextTheme }));
               }}
               onLanguageToggle={() => {
                 const newLang = state.language === 'FR' ? 'EN' : 'FR';

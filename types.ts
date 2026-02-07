@@ -1,8 +1,7 @@
-
 export enum UserRole {
   ADMIN = 'ADMIN',
   EMPLOYEE = 'EMPLOYEE',
-  SUPER_ADMIN = 'SUPER_ADMIN' // Toi, le développeur/vendeur
+  SUPER_ADMIN = 'SUPER_ADMIN'
 }
 
 export interface Plantation {
@@ -20,6 +19,7 @@ export interface User {
   role: UserRole;
   password?: string;
   plantationId: string;
+  lastLoginAt?: string; // Pour détecter la première connexion
 }
 
 export type ActivityType = 
@@ -77,10 +77,11 @@ export interface Notification {
   message: string;
   date: string;
   isRead: boolean;
+  recipientId?: string; // Pour filtrer qui voit quoi
 }
 
 export interface AppState {
-  plantations: Plantation[]; // Liste des clients (accessible par SuperAdmin)
+  plantations: Plantation[];
   users: User[];
   currentUser: User | null;
   activities: Activity[];

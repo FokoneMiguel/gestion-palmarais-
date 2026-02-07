@@ -42,20 +42,20 @@ const ChatBot: React.FC<{ state: AppState; t: any }> = ({ state, t }) => {
     <>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-amber-400 to-orange-600 text-white rounded-3xl shadow-2xl flex items-center justify-center text-3xl hover:scale-110 active:scale-95 transition-all border-4 border-white dark:border-slate-900"
+        className="fixed bottom-6 right-6 z-[200] w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-amber-400 to-orange-600 text-white rounded-3xl shadow-2xl flex items-center justify-center text-3xl hover:scale-110 active:scale-95 transition-all border-4 border-white dark:border-slate-900"
       >
         <span>{isOpen ? '✕' : '🤖'}</span>
       </button>
 
       {isOpen && (
-        <div className="fixed inset-x-4 bottom-24 md:inset-auto md:right-6 md:bottom-32 z-50 md:w-[450px] h-[70vh] max-h-[600px] bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 animate-in slide-in-from-bottom-10 overflow-hidden">
+        <div className="fixed inset-x-4 bottom-24 md:inset-auto md:right-6 md:bottom-32 z-[200] md:w-[450px] h-[70dvh] max-h-[600px] bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700 animate-in slide-in-from-bottom-10 overflow-hidden">
           {/* Header */}
           <div className="p-6 bg-amber-600 text-white flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">✨</div>
               <p className="font-black uppercase tracking-tight">BST Expert AI</p>
             </div>
-            <button onClick={() => setIsOpen(false)} className="opacity-50 hover:opacity-100">✕</button>
+            <button onClick={() => setIsOpen(false)} className="opacity-50 hover:opacity-100 p-2">✕</button>
           </div>
           
           {/* Messages */}
@@ -69,25 +69,26 @@ const ChatBot: React.FC<{ state: AppState; t: any }> = ({ state, t }) => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white dark:bg-slate-700 px-5 py-3 rounded-2xl animate-pulse text-xs font-black uppercase text-slate-400">IA réfléchit...</div>
+                <div className="bg-white dark:bg-slate-700 px-5 py-3 rounded-2xl animate-pulse text-xs font-black uppercase text-slate-400 tracking-widest">IA réfléchit...</div>
               </div>
             )}
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input - Fix visibilité bouton */}
+          {/* Input - Correction Bouton Invisible */}
           <div className="p-4 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shrink-0">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 relative">
               <input 
                 value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()}
                 placeholder="Votre question..."
-                className="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none min-w-0"
+                className="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-2xl px-5 py-4 text-[16px] dark:text-white outline-none min-w-0 pr-16"
               />
               <button 
                 onClick={handleSend} disabled={!input.trim() || isLoading}
-                className="bg-amber-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50 shrink-0"
+                className="absolute right-1 top-1/2 -translate-y-1/2 bg-amber-600 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50 disabled:bg-slate-400 z-10"
+                aria-label="Envoyer le message"
               >
-                🚀
+                <span className="text-xl">🚀</span>
               </button>
             </div>
           </div>

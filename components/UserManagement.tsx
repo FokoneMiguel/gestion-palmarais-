@@ -9,6 +9,7 @@ interface UserManagementProps {
 
 const UserManagement: React.FC<UserManagementProps> = ({ state, setState, t }) => {
   const [newUser, setNewUser] = useState({ username: '', password: '', role: UserRole.EMPLOYEE });
+  const [showPass, setShowPass] = useState(false);
 
   const currentPId = state.currentUser?.plantationId;
   const currentP = state.plantations.find(p => p.id === currentPId);
@@ -36,8 +37,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ state, setState, t }) =
 
     const user: User = { 
       id: `user-${Date.now()}`, 
-      username: newUser.username, 
-      password: newUser.password, 
+      username: newUser.username.trim(), 
+      password: newUser.password.trim(), 
       role: newUser.role,
       plantationId: currentPId || ''
     };
@@ -78,15 +79,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ state, setState, t }) =
             <form onSubmit={handleAddUser} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Utilisateur</label>
-                <input required value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} placeholder="ex: paul" className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all" />
+                <input required value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} placeholder="ex: paul" className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all text-[16px]" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mot de passe</label>
-                <input required value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} placeholder="ex: 1234" className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all" />
+                <div className="relative">
+                  <input required type={showPass ? "text" : "password"} value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} placeholder="ex: 1234" className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all pr-12 text-[16px]" />
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-xl">{showPass ? "👁️‍🗨️" : "👁️"}</button>
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Rôle</label>
-                <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all appearance-none">
+                <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-700 border-none rounded-2xl outline-none dark:text-white font-bold focus:ring-2 focus:ring-green-500 transition-all appearance-none text-[16px]">
                     <option value={UserRole.EMPLOYEE}>👷 Ouvrier (Terrain)</option>
                     <option value={UserRole.ADMIN}>💼 Gestionnaire (Admin)</option>
                 </select>

@@ -18,24 +18,40 @@ const Login: React.FC<LoginProps> = ({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [plantationCode, setPlantationCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Fix: Case sensitivity check for MiguelF to ensure access always works
-    const isMaster = username.trim().toLowerCase() === 'miguelf';
-    const checkCode = isMaster ? 'SYSTEM' : plantationCode.trim().toUpperCase();
     
-    const user = users.find(u => 
-        u.username.toLowerCase() === username.trim().toLowerCase() && 
-        u.password === password && 
-        (isMaster || u.plantationId === checkCode)
-    );
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const cleanCode = plantationCode.trim().toUpperCase();
 
-    if (user) {
-      onLogin(user);
-    } else {
-      addToast(t.invalidCredentials, 'error');
+    // Logique spéciale pour MiguelF (Super-Admin)
+    const isMaster = cleanUsername === 'miguelf';
+    
+    // 1. Trouver l'utilisateur par nom d'abord pour diagnostiquer l'erreur
+    const userByName = users.find(u => u.username.toLowerCase() === cleanUsername);
+    
+    if (!userByName) {
+      addToast(t.errUser, 'error');
+      return;
     }
+
+    // 2. Vérifier le mot de passe
+    if (userByName.password !== cleanPassword) {
+      addToast(t.errPass, 'error');
+      return;
+    }
+
+    // 3. Vérifier le code plantation (Sauf pour MiguelF)
+    if (!isMaster && userByName.plantationId !== cleanCode) {
+      addToast(t.errCode, 'error');
+      return;
+    }
+
+    // Si tout est bon
+    onLogin(userByName);
   };
 
   return (
@@ -54,7 +70,7 @@ const Login: React.FC<LoginProps> = ({
           <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">{t.loginSubtitle}</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-700 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 p-8 sm:p-10 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-700 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-500 via-amber-500 to-green-500"></div>
           
           <form onSubmit={handleLogin} className="space-y-6">
@@ -64,7 +80,7 @@ const Login: React.FC<LoginProps> = ({
                 type="text" value={plantationCode} onChange={e => setPlantationCode(e.target.value)}
                 placeholder="Ex: PALM-123"
                 disabled={username.trim().toLowerCase() === 'miguelf'}
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold disabled:opacity-50"
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold disabled:opacity-30 text-[16px]"
               />
             </div>
 
@@ -72,21 +88,31 @@ const Login: React.FC<LoginProps> = ({
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">{t.username}</label>
               <input 
                 type="text" value={username} onChange={e => setUsername(e.target.value)} required
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold"
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold text-[16px]"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">{t.password}</label>
-              <input 
-                type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold"
-              />
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password} onChange={e => setPassword(e.target.value)} required
+                  className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 rounded-2xl outline-none dark:text-white focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-bold text-[16px] pr-14"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-xl grayscale hover:grayscale-0 active:scale-90 transition-all"
+                >
+                  {showPassword ? "👁️‍🗨️" : "👁️"}
+                </button>
+              </div>
             </div>
 
             <button 
               type="submit"
-              className="w-full bg-green-700 hover:bg-green-800 text-white font-black py-5 rounded-2xl shadow-xl shadow-green-900/20 transition-all transform active:scale-95 uppercase tracking-widest text-xs"
+              className="w-full bg-green-700 hover:bg-green-800 text-white font-black py-5 rounded-2xl shadow-xl shadow-green-900/20 transition-all transform active:scale-95 uppercase tracking-widest text-xs min-h-[56px]"
             >
               {t.login}
             </button>
