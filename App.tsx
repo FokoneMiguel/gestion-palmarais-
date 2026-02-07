@@ -16,6 +16,7 @@ import TutorialModule from './components/TutorialModule.tsx';
 import ProductionModule from './components/ProductionModule.tsx';
 import SuperAdminModule from './components/SuperAdminModule.tsx';
 import Toast from './components/Toast.tsx';
+import { syncDataWithServer, syncDelete } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
@@ -66,36 +67,39 @@ const App: React.FC = () => {
     localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
   }, [state]);
 
-  // INGESTION CRITIQUE DU LIEN DE CONFIGURATION
+  useEffect(() => {
+    if (!state.currentUser) return;
+    syncDataWithServer(state, setState);
+    const syncInterval = setInterval(() => {
+      syncDataWithServer(state, setState);
+    }, 3000);
+    return () => clearInterval(syncInterval);
+  }, [state.currentUser?.id]);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const configBase64 = urlParams.get('config');
-
     if (configBase64) {
       try {
         const decodedString = decodeURIComponent(escape(atob(configBase64)));
         const configData = JSON.parse(decodedString);
-
         if (configData.plantations && configData.users) {
           setState(prev => {
             const updatedPlantations = [...prev.plantations];
             configData.plantations.forEach((p: Plantation) => {
               if (!updatedPlantations.find(exist => exist.id === p.id)) updatedPlantations.push(p);
             });
-
             const updatedUsers = [...prev.users];
             configData.users.forEach((u: User) => {
               if (!updatedUsers.find(exist => exist.id === u.id)) updatedUsers.push(u);
             });
-
             return { ...prev, plantations: updatedPlantations, users: updatedUsers };
           });
-          
           window.history.replaceState({}, document.title, window.location.pathname);
-          addToast("Configuration activée ! Connectez-vous.", 'success');
+          addToast("Compte activé !", 'success');
         }
       } catch (err) {
-        addToast("Lien de configuration invalide", 'error');
+        addToast("Erreur activation", 'error');
       }
     }
   }, []);
@@ -107,26 +111,22 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (user: User) => {
-    const isFirstLogin = !user.lastLoginAt;
     const updatedUsers = state.users.map(u => 
       u.id === user.id ? { ...u, lastLoginAt: new Date().toISOString() } : u
     );
     setState(prev => ({ ...prev, currentUser: user, users: updatedUsers }));
-    addToast(`Bienvenue, ${user.username} !`, 'success');
+    addToast(`Content de vous revoir !`, 'success');
     setActiveTab(user.role === UserRole.SUPER_ADMIN ? 'superadmin' : 'dashboard');
   };
 
   const handleLogout = () => {
     setState(prev => ({ ...prev, currentUser: null }));
     setInspectedPlantationId(null);
-    addToast("Déconnexion réussie", 'info');
+    addToast("Déconnexion", 'info');
   };
 
-  // Logique de surveillance pour MiguelF
   const effectivePlantationId = useMemo(() => {
-    if (state.currentUser?.role === UserRole.SUPER_ADMIN) {
-        return inspectedPlantationId || 'SYSTEM';
-    }
+    if (state.currentUser?.role === UserRole.SUPER_ADMIN) return inspectedPlantationId || 'SYSTEM';
     return state.currentUser?.plantationId || 'SYSTEM';
   }, [state.currentUser, inspectedPlantationId]);
 
@@ -134,43 +134,63 @@ const App: React.FC = () => {
     state.plantations.find(p => p.id === effectivePlantationId),
   [state.plantations, effectivePlantationId]);
 
-  const isAccessSuspended = state.currentUser?.role !== UserRole.SUPER_ADMIN && currentPlantation?.status === 'SUSPENDED';
+  const addActivity = (activity: any) => {
+    const newActivity = { 
+        ...activity, 
+        id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, 
+        plantationId: state.currentUser!.plantationId, 
+        updatedAt: Date.now(), 
+        synced: false 
+    };
+    setState(prev => ({ ...prev, activities: [newActivity, ...prev.activities] }));
+    addToast("Activité sauvegardée !");
+  };
+
+  const deleteActivity = (id: string) => {
+    if (window.confirm("Supprimer cette opération ?")) {
+        syncDelete(id); // Informe le cloud
+        setState(prev => ({ ...prev, activities: prev.activities.filter(a => a.id !== id) }));
+        addToast("Supprimé avec succès", 'info');
+    }
+  };
+
+  const addSale = (sale: any) => {
+    const newSale = { 
+        ...sale, 
+        id: `sale-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, 
+        plantationId: state.currentUser!.plantationId, 
+        updatedAt: Date.now(), 
+        synced: false 
+    };
+    setState(prev => ({ ...prev, sales: [newSale, ...prev.sales] }));
+    addToast("Vente enregistrée !", 'success');
+  };
+
+  const deleteSale = (id: string) => {
+    if (window.confirm("Supprimer cette vente ?")) {
+        syncDelete(id); // Informe le cloud
+        setState(prev => ({ ...prev, sales: prev.sales.filter(s => s.id !== id) }));
+        addToast("Vente retirée", 'info');
+    }
+  };
 
   const renderContent = () => {
-    // Si on est en mode Master et qu'on n'inspecte rien de précis
     if (state.currentUser?.role === UserRole.SUPER_ADMIN && !inspectedPlantationId) {
-        return <SuperAdminModule state={state} setState={setState} t={t} onInspect={(id) => {
-            setInspectedPlantationId(id);
-            setActiveTab('dashboard');
-        }} />;
+        return <SuperAdminModule state={state} setState={setState} t={t} onInspect={(id) => { setInspectedPlantationId(id); setActiveTab('dashboard'); }} />;
     }
-
-    if (isAccessSuspended) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl">
-                <div className="w-32 h-32 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-7xl mb-8">🛑</div>
-                <h2 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Accès Suspendu</h2>
-                <p className="text-slate-500 mt-6 max-w-md text-lg">Contactez MiguelF pour régulariser votre abonnement.</p>
-                <button onClick={handleLogout} className="mt-10 px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Déconnexion</button>
-            </div>
-        );
-    }
-
-    // Filtrer les données selon la plantation (soit celle de l'user, soit celle inspectée par MiguelF)
     const scopedState = { ...state, 
         activities: state.activities.filter(a => a.plantationId === effectivePlantationId), 
         sales: state.sales.filter(s => s.plantationId === effectivePlantationId), 
         cashMovements: state.cashMovements.filter(c => c.plantationId === effectivePlantationId) 
     };
-    
     switch (activeTab) {
       case 'dashboard': return <Dashboard state={scopedState} t={t} />;
-      case 'creation': return <ActivityModule type="CREATION" state={scopedState} onAdd={(a) => {}} t={t} />;
-      case 'maintenance': return <ActivityModule type="MAINTENANCE" state={scopedState} onAdd={(a) => {}} t={t} />;
-      case 'harvest': return <ActivityModule type="HARVEST" state={scopedState} onAdd={(a) => {}} t={t} />;
-      case 'production': return <ProductionModule state={scopedState} onAdd={(a) => {}} t={t} />;
-      case 'packaging': return <ActivityModule type="PACKAGING" state={scopedState} onAdd={(a) => {}} t={t} />;
-      case 'sales': return <SalesModule state={scopedState} onAdd={(s) => {}} t={t} />;
+      case 'creation': return <ActivityModule type="CREATION" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
+      case 'maintenance': return <ActivityModule type="MAINTENANCE" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
+      case 'harvest': return <ActivityModule type="HARVEST" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
+      case 'production': return <ProductionModule state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
+      case 'packaging': return <ActivityModule type="PACKAGING" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
+      case 'sales': return <SalesModule state={scopedState} onAdd={addSale} onDelete={deleteSale} t={t} />;
       case 'cash': return <CashModule state={scopedState} t={t} />;
       case 'stats': return <StatsModule state={scopedState} t={t} />;
       case 'users': return <UserManagement state={state} setState={setState} t={t} />;
@@ -181,53 +201,27 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       {!state.currentUser ? (
-        <Login 
-          onLogin={handleLogin} users={state.users} t={t} theme={state.theme} language={state.language}
-          onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
-          onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
-          addToast={addToast}
-        />
+        <Login onLogin={handleLogin} users={state.users} t={t} theme={state.theme} language={state.language} onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))} onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))} addToast={addToast} />
       ) : (
         <>
-          <Sidebar 
-            activeTab={activeTab} setActiveTab={setActiveTab} 
-            userRole={state.currentUser.role} t={t} onLogout={handleLogout} 
-            isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen}
-          />
-          <div className="flex-1 flex flex-col min-w-0 relative">
-            <Header 
-              t={t} theme={state.theme} language={state.language} 
-              onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))}
-              onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))}
-              searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-              user={state.currentUser} notifications={state.notifications}
-              markAllRead={() => {}} onHelpClick={() => setActiveTab('tutorial')}
-              onMenuToggle={() => setIsSidebarOpen(true)}
-              currentPlantation={currentPlantation}
-            />
-            
-            {/* Bannière Mode Inspection pour Super-Admin */}
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={state.currentUser.role} t={t} onLogout={handleLogout} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+          <div className="flex-1 flex flex-col min-w-0">
+            <Header t={t} theme={state.theme} language={state.language} onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))} onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))} searchQuery={searchQuery} setSearchQuery={setSearchQuery} user={state.currentUser} notifications={state.notifications} markAllRead={() => {}} onHelpClick={() => setActiveTab('tutorial')} onMenuToggle={() => setIsSidebarOpen(true)} currentPlantation={currentPlantation} />
             {inspectedPlantationId && (
-                <div className="bg-amber-600 text-white px-8 py-2 flex justify-between items-center animate-in slide-in-from-top duration-300">
-                    <p className="text-xs font-black uppercase tracking-widest">👁️ Mode Surveillance : {currentPlantation?.name}</p>
-                    <button onClick={() => { setInspectedPlantationId(null); setActiveTab('superadmin'); }} className="bg-white/20 hover:bg-white/30 px-4 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">Quitter</button>
+                <div className="bg-amber-600 text-white px-8 py-2 flex justify-between items-center shadow-lg">
+                    <p className="text-[10px] font-black uppercase tracking-widest">👁️ Mode Surveillance : {currentPlantation?.name}</p>
+                    <button onClick={() => { setInspectedPlantationId(null); setActiveTab('superadmin'); }} className="bg-white/20 px-4 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">Quitter</button>
                 </div>
             )}
-
-            <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">
-              {renderContent()}
-            </main>
+            <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">{renderContent()}</main>
           </div>
           <ChatBot state={state} t={t} />
         </>
       )}
-      
       <div className="fixed bottom-4 left-4 z-[500] flex flex-col space-y-2 pointer-events-none">
-        {toasts.map(toast => (
-          <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} />
-        ))}
+        {toasts.map(toast => <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} />)}
       </div>
     </div>
   );
