@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { AppState, Plantation, User, UserRole } from '../types';
+import { syncDelete } from '../syncService';
 
 interface SuperAdminModuleProps {
   state: AppState;
@@ -70,6 +71,28 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t,
     setNewPlantation({ name: '', owner: '', email: '', adminUsername: 'admin', adminPassword: '' });
   };
 
+  const toggleStatus = (pId: string) => {
+    setState(prev => ({
+        ...prev,
+        plantations: prev.plantations.map(p => 
+            p.id === pId ? { ...p, status: p.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' } : p
+        )
+    }));
+  };
+
+  const deletePlantation = (pId: string) => {
+    if (window.confirm("❗ ATTENTION : Cette action supprimera définitivement cette palmeraie et tous ses utilisateurs. Confirmer ?")) {
+        syncDelete(pId);
+        setState(prev => ({
+            ...prev,
+            plantations: prev.plantations.filter(p => p.id !== pId),
+            users: prev.users.filter(u => u.plantationId !== pId),
+            activities: prev.activities.filter(a => a.plantationId !== pId),
+            sales: prev.sales.filter(s => s.plantationId !== pId)
+        }));
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-green-900 text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden border border-slate-700">
@@ -130,16 +153,18 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t,
               const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
 
               return (
-                <div key={p.id} className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-xl">
+                <div key={p.id} className={`p-6 rounded-[2.5rem] shadow-sm border transition-all hover:shadow-xl ${p.status === 'SUSPENDED' ? 'bg-red-50/50 dark:bg-red-900/10 border-red-100 dark:border-red-900/20' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center space-x-5">
-                      <div className="w-16 h-16 rounded-3xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-3xl">🌴</div>
+                      <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl ${p.status === 'SUSPENDED' ? 'bg-red-100 text-red-600' : 'bg-green-50 dark:bg-green-900/20 text-green-600'}`}>
+                        {p.status === 'SUSPENDED' ? '🚫' : '🌴'}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
                           <h4 className="font-black text-lg text-slate-800 dark:text-white truncate">{p.name}</h4>
                           <span className="bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded-lg text-[10px] font-mono font-black text-green-600">{p.id}</span>
                         </div>
-                        <p className="text-xs font-bold text-slate-400 truncate">{p.ownerName} • Statut: <span className={p.status === 'ACTIVE' ? 'text-green-600' : 'text-red-500'}>{p.status}</span></p>
+                        <p className="text-xs font-bold text-slate-400 truncate">{p.ownerName} • Statut: <span className={p.status === 'ACTIVE' ? 'text-green-600' : 'text-red-500 font-black'}>{p.status}</span></p>
                         <div className="flex space-x-3 mt-2">
                           <span className="text-[9px] font-black uppercase text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg">🗓️ {activities.length} Opérations</span>
                           <span className="text-[9px] font-black uppercase text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-lg">💰 {totalRevenue.toLocaleString()} FCFA</span>
@@ -154,6 +179,12 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t,
                       >
                         <span>👁️ Surveiller</span>
                       </button>
+                      <button onClick={() => toggleStatus(p.id)} className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${p.status === 'ACTIVE' ? 'bg-amber-100 border-amber-200 text-amber-700 hover:bg-amber-200' : 'bg-green-600 border-green-700 text-white hover:bg-green-700'}`}>
+                        {p.status === 'ACTIVE' ? 'Suspendre' : 'Réactiver'}
+                      </button>
+                      <button onClick={() => deletePlantation(p.id)} className="bg-red-50 text-red-600 p-3 rounded-2xl hover:bg-red-100 transition-all" title="Supprimer Définitivement">
+                        🗑️
+                      </button>
                       <button onClick={() => shareWhatsApp(p.id)} className="bg-[#25D366] text-white p-3 rounded-2xl shadow-lg hover:rotate-6 transition-all" title="Partager Lien WhatsApp">
                         <span className="text-xl">💬</span>
                       </button>
@@ -162,6 +193,11 @@ const SuperAdminModule: React.FC<SuperAdminModuleProps> = ({ state, setState, t,
                 </div>
               );
             })}
+            {state.plantations.filter(p => p.id !== 'SYSTEM').length === 0 && (
+                <div className="p-20 text-center border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem]">
+                    <p className="text-slate-300 font-black uppercase tracking-widest">Aucune palmeraie enregistrée</p>
+                </div>
+            )}
           </div>
         </div>
       </div>

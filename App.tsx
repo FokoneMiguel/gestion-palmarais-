@@ -16,7 +16,7 @@ import TutorialModule from './components/TutorialModule.tsx';
 import ProductionModule from './components/ProductionModule.tsx';
 import SuperAdminModule from './components/SuperAdminModule.tsx';
 import Toast from './components/Toast.tsx';
-import { syncDataWithServer, syncDelete } from './syncService.ts';
+import { syncDataWithServer, syncDelete, pushNewAccounts } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
@@ -67,15 +67,16 @@ const App: React.FC = () => {
     localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
   }, [state]);
 
+  // Sync boucle principale
   useEffect(() => {
-    if (!state.currentUser) return;
-    syncDataWithServer(state, setState);
+    // On sync même si pas de currentUser pour récupérer les nouveaux comptes créés par MiguelF
     const syncInterval = setInterval(() => {
       syncDataWithServer(state, setState);
     }, 3000);
     return () => clearInterval(syncInterval);
-  }, [state.currentUser?.id]);
+  }, [state.currentUser?.id, state.plantations.length]);
 
+  // Traitement du lien d'activation (Config)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const configBase64 = urlParams.get('config');
@@ -84,22 +85,25 @@ const App: React.FC = () => {
         const decodedString = decodeURIComponent(escape(atob(configBase64)));
         const configData = JSON.parse(decodedString);
         if (configData.plantations && configData.users) {
+          // IMPORTANT: Pousser immédiatement vers le Cloud pour que la connexion fonctionne
+          pushNewAccounts(configData.plantations, configData.users);
+          
           setState(prev => {
             const updatedPlantations = [...prev.plantations];
             configData.plantations.forEach((p: Plantation) => {
-              if (!updatedPlantations.find(exist => exist.id === p.id)) updatedPlantations.push(p);
+                if (!updatedPlantations.find(exist => exist.id === p.id)) updatedPlantations.push(p);
             });
             const updatedUsers = [...prev.users];
             configData.users.forEach((u: User) => {
-              if (!updatedUsers.find(exist => exist.id === u.id)) updatedUsers.push(u);
+                if (!updatedUsers.find(exist => exist.id === u.id)) updatedUsers.push(u);
             });
             return { ...prev, plantations: updatedPlantations, users: updatedUsers };
           });
           window.history.replaceState({}, document.title, window.location.pathname);
-          addToast("Compte activé !", 'success');
+          addToast("Configuration chargée ! Vous pouvez vous connecter.", 'success');
         }
       } catch (err) {
-        addToast("Erreur activation", 'error');
+        addToast("Erreur lors de l'activation du lien.", 'error');
       }
     }
   }, []);
@@ -148,7 +152,7 @@ const App: React.FC = () => {
 
   const deleteActivity = (id: string) => {
     if (window.confirm("Supprimer cette opération ?")) {
-        syncDelete(id); // Informe le cloud
+        syncDelete(id);
         setState(prev => ({ ...prev, activities: prev.activities.filter(a => a.id !== id) }));
         addToast("Supprimé avec succès", 'info');
     }
@@ -168,21 +172,35 @@ const App: React.FC = () => {
 
   const deleteSale = (id: string) => {
     if (window.confirm("Supprimer cette vente ?")) {
-        syncDelete(id); // Informe le cloud
+        syncDelete(id);
         setState(prev => ({ ...prev, sales: prev.sales.filter(s => s.id !== id) }));
         addToast("Vente retirée", 'info');
     }
   };
 
   const renderContent = () => {
+    // Si compte suspendu (sauf pour MiguelF)
+    if (state.currentUser?.role !== UserRole.SUPER_ADMIN && currentPlantation?.status === 'SUSPENDED') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-10 bg-white dark:bg-slate-800 rounded-[3rem] shadow-xl">
+                <div className="text-7xl mb-6">🚫</div>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tighter">Accès Suspendu</h2>
+                <p className="text-slate-500 mt-4 max-w-sm">Votre accès a été temporairement désactivé par l'administrateur système.</p>
+                <button onClick={handleLogout} className="mt-8 px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest">Retour</button>
+            </div>
+        );
+    }
+
     if (state.currentUser?.role === UserRole.SUPER_ADMIN && !inspectedPlantationId) {
         return <SuperAdminModule state={state} setState={setState} t={t} onInspect={(id) => { setInspectedPlantationId(id); setActiveTab('dashboard'); }} />;
     }
+
     const scopedState = { ...state, 
         activities: state.activities.filter(a => a.plantationId === effectivePlantationId), 
         sales: state.sales.filter(s => s.plantationId === effectivePlantationId), 
         cashMovements: state.cashMovements.filter(c => c.plantationId === effectivePlantationId) 
     };
+
     switch (activeTab) {
       case 'dashboard': return <Dashboard state={scopedState} t={t} />;
       case 'creation': return <ActivityModule type="CREATION" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
