@@ -1,10 +1,9 @@
 
-import { AppState, Plantation, User } from './types';
+import { AppState, Plantation, User, Notification } from './types';
 
 /**
- * syncService.ts - Version 3.0
- * Gère désormais la synchronisation globale des COMPTES (Users/Plantations) 
- * en plus des données opérationnelles.
+ * syncService.ts - Version 4.0
+ * Intègre les notifications système globales pour le Super-Admin.
  */
 
 const CLOUD_STORAGE_KEY = 'plameraie_cloud_shared_v3';
@@ -16,14 +15,15 @@ interface CloudData {
     sales: any[];
     cash: any[];
     deletedIds: string[];
+    systemNotifications: Notification[]; // Nouveau canal global
 }
 
 const getCloudData = (): CloudData => {
     try {
         const cloud = localStorage.getItem(CLOUD_STORAGE_KEY);
-        return cloud ? JSON.parse(cloud) : { plantations: [], users: [], activities: [], sales: [], cash: [], deletedIds: [] };
+        return cloud ? JSON.parse(cloud) : { plantations: [], users: [], activities: [], sales: [], cash: [], deletedIds: [], systemNotifications: [] };
     } catch (e) {
-        return { plantations: [], users: [], activities: [], sales: [], cash: [], deletedIds: [] };
+        return { plantations: [], users: [], activities: [], sales: [], cash: [], deletedIds: [], systemNotifications: [] };
     }
 };
 
@@ -32,8 +32,21 @@ const saveToCloud = (data: CloudData) => {
 };
 
 /**
- * Enregistre immédiatement de nouveaux comptes (utilisé lors de l'activation par lien)
+ * Envoie une notification système que seul le Super-Admin recevra
  */
+export const pushSystemNotification = (message: string) => {
+    const cloud = getCloudData();
+    const newNotif: Notification = {
+        id: `sys-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        type: 'SUCCESS',
+        message,
+        date: new Date().toISOString(),
+        isRead: false
+    };
+    cloud.systemNotifications.push(newNotif);
+    saveToCloud(cloud);
+};
+
 export const pushNewAccounts = (plantations: Plantation[], users: User[]) => {
     const cloud = getCloudData();
     plantations.forEach(p => {
@@ -52,18 +65,17 @@ export const syncDelete = (id: string) => {
         cloud.activities = cloud.activities.filter(a => a.id !== id);
         cloud.sales = cloud.sales.filter(s => s.id !== id);
         cloud.cash = cloud.cash.filter(c => c.id !== id);
-        // Supprimer aussi de la table plantations si c'est un ID de plantation
         cloud.plantations = cloud.plantations.filter(p => p.id !== id);
         saveToCloud(cloud);
     }
 };
 
-export const syncDataWithServer = async (state: AppState, setState: Function) => {
+export const syncDataWithServer = async (state: AppState, setState: Function, addToast?: Function) => {
   const cloud = getCloudData();
   const plantationId = state.currentUser?.plantationId;
   const isMaster = state.currentUser?.role === 'SUPER_ADMIN';
 
-  // 1. PUSH : Données opérationnelles locales -> Cloud
+  // 1. PUSH : Données locales -> Cloud
   let hasChanges = false;
   const unsyncedActivities = state.activities.filter(a => !a.synced);
   const unsyncedSales = state.sales.filter(s => !s.synced);
@@ -82,7 +94,6 @@ export const syncDataWithServer = async (state: AppState, setState: Function) =>
       }
   });
 
-  // PUSH : Mises à jour de statut de plantation (si Master)
   if (isMaster) {
       cloud.plantations = state.plantations;
       hasChanges = true;
@@ -110,13 +121,23 @@ export const syncDataWithServer = async (state: AppState, setState: Function) =>
   const finalPlantations = merge(state.plantations, cloud.plantations, false);
   const finalUsers = merge(state.users, cloud.users, false);
 
-  // Déterminer si un changement d'état est requis
+  // Gestion des notifications pour MiguelF
+  let finalNotifications = [...state.notifications];
+  if (isMaster) {
+      cloud.systemNotifications.forEach(sn => {
+          if (!state.notifications.find(n => n.id === sn.id)) {
+              finalNotifications.push(sn);
+              if (addToast) addToast(sn.message, 'success');
+          }
+      });
+  }
+
   const needsUpdate = 
       finalActivities.length !== state.activities.length ||
       finalSales.length !== state.sales.length ||
       finalPlantations.length !== state.plantations.length ||
       finalUsers.length !== state.users.length ||
-      // Vérifier les changements de statut internes aux objets (ex: status SUSPENDED)
+      finalNotifications.length !== state.notifications.length ||
       JSON.stringify(finalPlantations) !== JSON.stringify(state.plantations);
 
   if (needsUpdate) {
@@ -126,6 +147,7 @@ export const syncDataWithServer = async (state: AppState, setState: Function) =>
           sales: finalSales.sort((a,b) => b.updatedAt - a.updatedAt),
           plantations: finalPlantations,
           users: finalUsers,
+          notifications: finalNotifications.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
           isSyncing: false
       }));
   }

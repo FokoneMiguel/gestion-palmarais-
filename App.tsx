@@ -16,7 +16,7 @@ import TutorialModule from './components/TutorialModule.tsx';
 import ProductionModule from './components/ProductionModule.tsx';
 import SuperAdminModule from './components/SuperAdminModule.tsx';
 import Toast from './components/Toast.tsx';
-import { syncDataWithServer, syncDelete, pushNewAccounts } from './syncService.ts';
+import { syncDataWithServer, syncDelete, pushNewAccounts, pushSystemNotification } from './syncService.ts';
 
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
@@ -69,12 +69,12 @@ const App: React.FC = () => {
 
   // Sync boucle principale
   useEffect(() => {
-    // On sync même si pas de currentUser pour récupérer les nouveaux comptes créés par MiguelF
     const syncInterval = setInterval(() => {
-      syncDataWithServer(state, setState);
+      // On passe addToast pour que MiguelF reçoive les alertes système en temps réel
+      syncDataWithServer(state, setState, state.currentUser?.role === UserRole.SUPER_ADMIN ? addToast : undefined);
     }, 3000);
     return () => clearInterval(syncInterval);
-  }, [state.currentUser?.id, state.plantations.length]);
+  }, [state.currentUser?.id, state.plantations.length, state.notifications.length]);
 
   // Traitement du lien d'activation (Config)
   useEffect(() => {
@@ -85,7 +85,6 @@ const App: React.FC = () => {
         const decodedString = decodeURIComponent(escape(atob(configBase64)));
         const configData = JSON.parse(decodedString);
         if (configData.plantations && configData.users) {
-          // IMPORTANT: Pousser immédiatement vers le Cloud pour que la connexion fonctionne
           pushNewAccounts(configData.plantations, configData.users);
           
           setState(prev => {
@@ -100,7 +99,7 @@ const App: React.FC = () => {
             return { ...prev, plantations: updatedPlantations, users: updatedUsers };
           });
           window.history.replaceState({}, document.title, window.location.pathname);
-          addToast("Configuration chargée ! Vous pouvez vous connecter.", 'success');
+          addToast("Lien activé avec succès !", 'success');
         }
       } catch (err) {
         addToast("Erreur lors de l'activation du lien.", 'error');
@@ -111,22 +110,29 @@ const App: React.FC = () => {
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   };
 
   const handleLogin = (user: User) => {
+    // Si c'est un ADMIN de plantation qui se connecte pour la première fois
+    if (user.role === UserRole.ADMIN && !user.lastLoginAt) {
+        const plantationName = state.plantations.find(p => p.id === user.plantationId)?.name || 'Inconnue';
+        pushSystemNotification(`🚀 Nouveau client : La plantation "${plantationName}" s'est activée !`);
+    }
+
     const updatedUsers = state.users.map(u => 
       u.id === user.id ? { ...u, lastLoginAt: new Date().toISOString() } : u
     );
+    
     setState(prev => ({ ...prev, currentUser: user, users: updatedUsers }));
-    addToast(`Content de vous revoir !`, 'success');
+    addToast(`Bienvenue ${user.username} !`, 'success');
     setActiveTab(user.role === UserRole.SUPER_ADMIN ? 'superadmin' : 'dashboard');
   };
 
   const handleLogout = () => {
     setState(prev => ({ ...prev, currentUser: null }));
     setInspectedPlantationId(null);
-    addToast("Déconnexion", 'info');
+    addToast("Session fermée", 'info');
   };
 
   const effectivePlantationId = useMemo(() => {
@@ -147,14 +153,14 @@ const App: React.FC = () => {
         synced: false 
     };
     setState(prev => ({ ...prev, activities: [newActivity, ...prev.activities] }));
-    addToast("Activité sauvegardée !");
+    addToast("Donnée sauvegardée");
   };
 
   const deleteActivity = (id: string) => {
-    if (window.confirm("Supprimer cette opération ?")) {
+    if (window.confirm("Supprimer ?")) {
         syncDelete(id);
         setState(prev => ({ ...prev, activities: prev.activities.filter(a => a.id !== id) }));
-        addToast("Supprimé avec succès", 'info');
+        addToast("Suppression effectuée", 'info');
     }
   };
 
@@ -167,7 +173,7 @@ const App: React.FC = () => {
         synced: false 
     };
     setState(prev => ({ ...prev, sales: [newSale, ...prev.sales] }));
-    addToast("Vente enregistrée !", 'success');
+    addToast("Vente enregistrée", 'success');
   };
 
   const deleteSale = (id: string) => {
@@ -179,13 +185,12 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    // Si compte suspendu (sauf pour MiguelF)
     if (state.currentUser?.role !== UserRole.SUPER_ADMIN && currentPlantation?.status === 'SUSPENDED') {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-10 bg-white dark:bg-slate-800 rounded-[3rem] shadow-xl">
                 <div className="text-7xl mb-6">🚫</div>
                 <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tighter">Accès Suspendu</h2>
-                <p className="text-slate-500 mt-4 max-w-sm">Votre accès a été temporairement désactivé par l'administrateur système.</p>
+                <p className="text-slate-500 mt-4 max-w-sm">Veuillez contacter MiguelF pour réactiver votre accès.</p>
                 <button onClick={handleLogout} className="mt-8 px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest">Retour</button>
             </div>
         );
@@ -226,9 +231,9 @@ const App: React.FC = () => {
         <>
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={state.currentUser.role} t={t} onLogout={handleLogout} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
           <div className="flex-1 flex flex-col min-w-0">
-            <Header t={t} theme={state.theme} language={state.language} onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))} onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))} searchQuery={searchQuery} setSearchQuery={setSearchQuery} user={state.currentUser} notifications={state.notifications} markAllRead={() => {}} onHelpClick={() => setActiveTab('tutorial')} onMenuToggle={() => setIsSidebarOpen(true)} currentPlantation={currentPlantation} />
+            <Header t={t} theme={state.theme} language={state.language} onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))} onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))} searchQuery={searchQuery} setSearchQuery={setSearchQuery} user={state.currentUser} notifications={state.notifications} markAllRead={() => setState(p => ({ ...p, notifications: p.notifications.map(n => ({...n, isRead: true})) }))} onHelpClick={() => setActiveTab('tutorial')} onMenuToggle={() => setIsSidebarOpen(true)} currentPlantation={currentPlantation} />
             {inspectedPlantationId && (
-                <div className="bg-amber-600 text-white px-8 py-2 flex justify-between items-center shadow-lg">
+                <div className="bg-amber-600 text-white px-8 py-2 flex justify-between items-center shadow-lg animate-in slide-in-from-top duration-300">
                     <p className="text-[10px] font-black uppercase tracking-widest">👁️ Mode Surveillance : {currentPlantation?.name}</p>
                     <button onClick={() => { setInspectedPlantationId(null); setActiveTab('superadmin'); }} className="bg-white/20 px-4 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">Quitter</button>
                 </div>
