@@ -1,8 +1,9 @@
+
 import { GoogleGenAI, Modality } from "@google/genai";
 
 export const checkApiHealth = async (): Promise<{ok: boolean, message: string}> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined' || apiKey === '') {
+  if (!apiKey || apiKey === 'undefined') {
     return { ok: false, message: "Clé API non configurée." };
   }
 
@@ -10,47 +11,53 @@ export const checkApiHealth = async (): Promise<{ok: boolean, message: string}> 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [{ parts: [{ text: "ping" }] }],
+      contents: "ping",
     });
     
     return response.text ? { ok: true, message: "Connecté." } : { ok: false, message: "Pas de réponse." };
   } catch (error: any) {
-    console.warn("API Health check failed:", error);
-    return { ok: false, message: error.message || "Erreur de connexion API." };
+    return { ok: false, message: "Erreur de connexion API." };
   }
 };
 
 export const getGeminiResponse = async (prompt: string, context?: string) => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined' || apiKey === '') return "Erreur : Clé API non disponible sur ce serveur.";
+  if (!apiKey || apiKey === 'undefined') return "Erreur : La clé API n'est pas activée.";
 
   try {
     const ai = new GoogleGenAI({ apiKey });
+    // Utilisation d'un format de contenu simplifié pour éviter les erreurs de structure
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: prompt,
       config: {
-        systemInstruction: `Tu es l'assistant expert de Plameraie BST. Réponds aux questions sur la gestion des palmiers à huile. Contexte actuel de l'utilisateur : ${context || "Général"}.`,
-        temperature: 0.7,
+        systemInstruction: `Tu es l'assistant expert technique de Plameraie BST. 
+        RÈGLE CRITIQUE : N'utilise JAMAIS de symboles Markdown (pas de **, pas de #, pas de *). 
+        Écris uniquement en texte brut, simple et clair. 
+        Si tu dois faire une liste, utilise des tirets (-) simples.
+        Contexte utilisateur : ${context || "Gestion de palmeraie"}.`,
+        temperature: 0.5, // Réduction de la température pour plus de stabilité
       }
     });
     
-    return response.text || "Désolé, je ne parviens pas à formuler une réponse.";
+    // Nettoyage manuel au cas où le modèle ignorerait l'instruction système
+    let text = response.text || "Désolé, je ne parviens pas à répondre.";
+    return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '');
   } catch (error: any) {
-    console.error("Gemini Error:", error);
-    return "L'assistant expert rencontre un problème technique temporaire.";
+    console.error("Gemini API Error:", error);
+    return "Désolé, je rencontre une petite difficulté technique pour accéder au réseau IA. Réessayez dans un instant.";
   }
 };
 
 export const generateTTS = async (text: string) => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined' || apiKey === '') return null;
+  if (!apiKey || apiKey === 'undefined') return null;
   
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text }] }],
+      contents: text,
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
