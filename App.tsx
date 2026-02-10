@@ -18,7 +18,7 @@ import SuperAdminModule from './components/SuperAdminModule.tsx';
 import Toast from './components/Toast.tsx';
 import { syncDataWithServer, syncDelete, pushNewAccounts, pushSystemNotification } from './syncService.ts';
 
-// DONNÉES DE DÉMONSTRATION PRÉ-REMPLIES
+// DONNÉES DE DÉMONSTRATION ÉTALÉES SUR 3 MOIS POUR LES GRAPHES
 const DEMO_PLANTATION: Plantation = {
   id: 'DEMO-BST',
   name: 'Palmeraie Royale (Démo)',
@@ -38,23 +38,26 @@ const DEMO_ADMIN: User = {
 };
 
 const DEMO_ACTIVITIES: Activity[] = [
-  { id: 'demo-act-1', plantationId: 'DEMO-BST', type: 'CREATION', label: 'Mise en terre', date: '2024-03-01', zone: 'Parcelle A1', quantity: 500, unit: 'plants', cost: 250000, workers: ['Moussa', 'Paul'], updatedAt: Date.now(), synced: true },
-  { id: 'demo-act-2', plantationId: 'DEMO-BST', type: 'MAINTENANCE', label: 'Désherbage manuel', date: '2024-03-05', zone: 'Parcelle A1', cost: 45000, workers: ['Koffi'], updatedAt: Date.now(), synced: true },
-  { id: 'demo-act-3', plantationId: 'DEMO-BST', type: 'HARVEST', label: 'Coupe des régimes', date: '2024-03-10', zone: 'Parcelle A1', quantity: 1200, unit: 'kg', cost: 60000, workers: ['Equipe Alpha'], updatedAt: Date.now(), synced: true },
-  { id: 'demo-act-4', plantationId: 'DEMO-BST', type: 'PRODUCTION', label: 'Pressage à chaud', date: '2024-03-11', zone: 'Usine Nord', inputQuantity: 1200, inputUnit: 'kg', quantity: 240, unit: 'L', cost: 35000, workers: ['Yao'], updatedAt: Date.now(), synced: true },
-  { id: 'demo-act-5', plantationId: 'DEMO-BST', type: 'PACKAGING', label: 'Mise en bidons 20L', date: '2024-03-12', zone: 'Conditionnement', quantity: 12, unit: 'bidons', cost: 5000, workers: ['Awa'], updatedAt: Date.now(), synced: true },
+  // Janvier : Gros investissements de création
+  { id: 'demo-act-1', plantationId: 'DEMO-BST', type: 'CREATION', label: 'Mise en terre', date: '2024-01-15', zone: 'Parcelle A1', quantity: 500, unit: 'plants', cost: 450000, workers: ['Moussa', 'Paul'], updatedAt: Date.now(), synced: true },
+  { id: 'demo-act-2', plantationId: 'DEMO-BST', type: 'MAINTENANCE', label: 'Élagage', date: '2024-02-05', zone: 'Parcelle A1', cost: 65000, workers: ['Koffi'], updatedAt: Date.now(), synced: true },
+  // Mars : Activité intense
+  { id: 'demo-act-3', plantationId: 'DEMO-BST', type: 'HARVEST', label: 'Coupe des régimes', date: '2024-03-01', zone: 'Parcelle A1', quantity: 1200, unit: 'kg', cost: 80000, workers: ['Equipe Alpha'], updatedAt: Date.now(), synced: true },
+  { id: 'demo-act-4', plantationId: 'DEMO-BST', type: 'PRODUCTION', label: 'Pressage Batch #1', date: '2024-03-10', zone: 'Usine Nord', inputQuantity: 1200, inputUnit: 'kg', quantity: 240, unit: 'L', cost: 35000, workers: ['Yao'], updatedAt: Date.now(), synced: true },
+  { id: 'demo-act-5', plantationId: 'DEMO-BST', type: 'PACKAGING', label: 'Mise en bidons', date: '2024-03-15', zone: 'Conditionnement', quantity: 12, unit: 'bidons', cost: 5000, workers: ['Awa'], updatedAt: Date.now(), synced: true },
 ];
 
 const DEMO_SALES: Sale[] = [
-  { id: 'demo-sale-1', plantationId: 'DEMO-BST', date: '2024-03-15', client: 'Grossiste Abidjan', product: 'Huile de Palme', quantity: 200, unitPrice: 900, total: 180000, updatedAt: Date.now(), synced: true },
-  { id: 'demo-sale-2', plantationId: 'DEMO-BST', date: '2024-03-18', client: 'Boutique Locale', product: 'Huile de Palme', quantity: 40, unitPrice: 950, total: 38000, updatedAt: Date.now(), synced: true },
+  { id: 'demo-sale-1', plantationId: 'DEMO-BST', date: '2024-02-20', client: 'Marché Local', product: 'Huile de Palme', quantity: 100, unitPrice: 850, total: 85000, updatedAt: Date.now(), synced: true },
+  { id: 'demo-sale-2', plantationId: 'DEMO-BST', date: '2024-03-05', client: 'Grossiste Abidjan', product: 'Huile de Palme', quantity: 300, unitPrice: 900, total: 270000, updatedAt: Date.now(), synced: true },
+  { id: 'demo-sale-3', plantationId: 'DEMO-BST', date: '2024-03-25', client: 'Exportateur CI', product: 'Huile de Palme', quantity: 500, unitPrice: 950, total: 475000, updatedAt: Date.now(), synced: true },
 ];
 
 const DEMO_CASH: CashMovement[] = [
-  { id: 'demo-cash-1', plantationId: 'DEMO-BST', date: '2024-03-15', type: 'IN', amount: 180000, reason: 'Vente Huile Batch #01', updatedAt: Date.now(), synced: true },
-  { id: 'demo-cash-2', plantationId: 'DEMO-BST', date: '2024-03-16', type: 'OUT', amount: 50000, reason: 'Achat Engrais NPK', updatedAt: Date.now(), synced: true },
-  { id: 'demo-cash-3', plantationId: 'DEMO-BST', date: '2024-03-18', type: 'IN', amount: 38000, reason: 'Vente Boutique', updatedAt: Date.now(), synced: true },
-  { id: 'demo-cash-4', plantationId: 'DEMO-BST', date: '2024-03-20', type: 'WITHDRAWAL', amount: 20000, reason: 'Avance sur salaire Paul', updatedAt: Date.now(), synced: true },
+  { id: 'demo-cash-1', plantationId: 'DEMO-BST', date: '2024-02-20', type: 'IN', amount: 85000, reason: 'Vente Février', updatedAt: Date.now(), synced: true },
+  { id: 'demo-cash-2', plantationId: 'DEMO-BST', date: '2024-03-05', type: 'IN', amount: 270000, reason: 'Vente Grossiste', updatedAt: Date.now(), synced: true },
+  { id: 'demo-cash-3', plantationId: 'DEMO-BST', date: '2024-03-10', type: 'OUT', amount: 150000, reason: 'Achat Matériel Usine', updatedAt: Date.now(), synced: true },
+  { id: 'demo-cash-4', plantationId: 'DEMO-BST', date: '2024-03-25', type: 'IN', amount: 475000, reason: 'Encaissement Export', updatedAt: Date.now(), synced: true },
 ];
 
 const INITIAL_USERS: User[] = [
@@ -70,26 +73,9 @@ const INITIAL_PLANTATIONS: Plantation[] = [
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
     try {
-      const saved = localStorage.getItem('plameraie_db_v3');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // On force la présence et la mise à jour des données Démo
-        const demoExists = parsed.plantations.find((p: any) => p.id === 'DEMO-BST');
-        if (!demoExists) {
-          parsed.plantations.push(DEMO_PLANTATION);
-          parsed.users.push(DEMO_ADMIN);
-          parsed.activities = [...parsed.activities, ...DEMO_ACTIVITIES];
-          parsed.sales = [...parsed.sales, ...DEMO_SALES];
-          parsed.cashMovements = [...(parsed.cashMovements || []), ...DEMO_CASH];
-        } else if (!parsed.cashMovements || parsed.cashMovements.length === 0) {
-          // Correction spécifique pour ajouter la caisse si elle manque
-          parsed.cashMovements = DEMO_CASH;
-        }
-        return parsed;
-      }
-    } catch (e) {
-      console.error("Erreur Storage", e);
-    }
+      const saved = localStorage.getItem('plameraie_db_v4_demo');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
     return {
       plantations: INITIAL_PLANTATIONS,
       users: INITIAL_USERS,
@@ -114,46 +100,8 @@ const App: React.FC = () => {
   const t = TRANSLATIONS[state.language];
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    if (state.theme === 'dark') root.classList.add('dark');
-    else root.classList.remove('dark');
-  }, [state.theme]);
-
-  useEffect(() => {
-    localStorage.setItem('plameraie_db_v3', JSON.stringify(state));
+    localStorage.setItem('plameraie_db_v4_demo', JSON.stringify(state));
   }, [state]);
-
-  useEffect(() => {
-    const syncInterval = setInterval(() => {
-      syncDataWithServer(state, setState, state.currentUser?.role === UserRole.SUPER_ADMIN ? addToast : undefined);
-    }, 3000);
-    return () => clearInterval(syncInterval);
-  }, [state.currentUser?.id, state.plantations.length, state.notifications.length]);
-
-  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    const id = Math.random().toString(36).substr(2, 9);
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
-  };
-
-  const handleLogin = (user: User) => {
-    if (user.role === UserRole.ADMIN && !user.lastLoginAt && user.plantationId !== 'DEMO-BST') {
-        const plantationName = state.plantations.find(p => p.id === user.plantationId)?.name || 'Inconnue';
-        pushSystemNotification(`🚀 Nouveau client : La plantation "${plantationName}" s'est activée !`);
-    }
-    const updatedUsers = state.users.map(u => 
-      u.id === user.id ? { ...u, lastLoginAt: new Date().toISOString() } : u
-    );
-    setState(prev => ({ ...prev, currentUser: user, users: updatedUsers }));
-    addToast(`Bienvenue ${user.username} !`, 'success');
-    setActiveTab(user.role === UserRole.SUPER_ADMIN ? 'superadmin' : 'dashboard');
-  };
-
-  const handleLogout = () => {
-    setState(prev => ({ ...prev, currentUser: null }));
-    setInspectedPlantationId(null);
-    addToast("Session fermée", 'info');
-  };
 
   const effectivePlantationId = useMemo(() => {
     if (state.currentUser?.role === UserRole.SUPER_ADMIN) return inspectedPlantationId || 'SYSTEM';
@@ -171,55 +119,36 @@ const App: React.FC = () => {
     cashMovements: state.cashMovements.filter(c => c.plantationId === effectivePlantationId)
   }), [state, effectivePlantationId]);
 
-  const addActivity = (activity: any) => {
-    const newActivity = { ...activity, id: `act-${Date.now()}`, plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false };
-    setState(prev => ({ ...prev, activities: [newActivity, ...prev.activities] }));
-    addToast("Donnée sauvegardée");
+  const handleLogin = (user: User) => {
+    const updatedUsers = state.users.map(u => u.id === user.id ? { ...u, lastLoginAt: new Date().toISOString() } : u);
+    setState(prev => ({ ...prev, currentUser: user, users: updatedUsers }));
+    setActiveTab(user.role === UserRole.SUPER_ADMIN ? 'superadmin' : 'dashboard');
   };
 
-  const deleteActivity = (id: string) => {
-    if (window.confirm("Supprimer ?")) {
-        syncDelete(id);
-        setState(prev => ({ ...prev, activities: prev.activities.filter(a => a.id !== id) }));
-    }
+  const handleLogout = () => {
+    setState(prev => ({ ...prev, currentUser: null }));
+    setInspectedPlantationId(null);
   };
 
-  const addSale = (sale: any) => {
-    const newSale = { ...sale, id: `sale-${Date.now()}`, plantationId: state.currentUser!.plantationId, updatedAt: Date.now(), synced: false };
-    setState(prev => ({ ...prev, sales: [newSale, ...prev.sales] }));
-    addToast("Vente enregistrée", 'success');
-  };
-
-  const deleteSale = (id: string) => {
-    if (window.confirm("Supprimer ?")) {
-        syncDelete(id);
-        setState(prev => ({ ...prev, sales: prev.sales.filter(s => s.id !== id) }));
-    }
+  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   };
 
   const renderContent = () => {
-    if (state.currentUser?.role !== UserRole.SUPER_ADMIN && currentPlantation?.status === 'SUSPENDED') {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-10 bg-white dark:bg-slate-800 rounded-[3rem] shadow-xl">
-                <div className="text-7xl mb-6">🚫</div>
-                <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tighter">Accès Suspendu</h2>
-                <button onClick={handleLogout} className="mt-8 px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs">Retour</button>
-            </div>
-        );
-    }
-
     if (state.currentUser?.role === UserRole.SUPER_ADMIN && !inspectedPlantationId && activeTab !== 'superadmin' && activeTab !== 'tutorial') {
         return <SuperAdminModule state={state} setState={setState} t={t} onInspect={(id) => { setInspectedPlantationId(id); setActiveTab('dashboard'); }} />;
     }
 
     switch (activeTab) {
       case 'dashboard': return <Dashboard state={scopedState} t={t} />;
-      case 'creation': return <ActivityModule type="CREATION" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
-      case 'maintenance': return <ActivityModule type="MAINTENANCE" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
-      case 'harvest': return <ActivityModule type="HARVEST" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
-      case 'production': return <ProductionModule state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
-      case 'packaging': return <ActivityModule type="PACKAGING" state={scopedState} onAdd={addActivity} onDelete={deleteActivity} t={t} />;
-      case 'sales': return <SalesModule state={scopedState} onAdd={addSale} onDelete={deleteSale} t={t} />;
+      case 'creation': return <ActivityModule type="CREATION" state={scopedState} onAdd={(a) => setState(p => ({...p, activities: [{...a, id: Date.now().toString(), plantationId: effectivePlantationId, updatedAt: Date.now()}, ...p.activities]}))} t={t} />;
+      case 'maintenance': return <ActivityModule type="MAINTENANCE" state={scopedState} onAdd={(a) => setState(p => ({...p, activities: [{...a, id: Date.now().toString(), plantationId: effectivePlantationId, updatedAt: Date.now()}, ...p.activities]}))} t={t} />;
+      case 'harvest': return <ActivityModule type="HARVEST" state={scopedState} onAdd={(a) => setState(p => ({...p, activities: [{...a, id: Date.now().toString(), plantationId: effectivePlantationId, updatedAt: Date.now()}, ...p.activities]}))} t={t} />;
+      case 'production': return <ProductionModule state={scopedState} onAdd={(a) => setState(p => ({...p, activities: [{...a, id: Date.now().toString(), plantationId: effectivePlantationId, updatedAt: Date.now()}, ...p.activities]}))} t={t} />;
+      case 'packaging': return <ActivityModule type="PACKAGING" state={scopedState} onAdd={(a) => setState(p => ({...p, activities: [{...a, id: Date.now().toString(), plantationId: effectivePlantationId, updatedAt: Date.now()}, ...p.activities]}))} t={t} />;
+      case 'sales': return <SalesModule state={scopedState} onAdd={(s) => setState(p => ({...p, sales: [{...s, id: Date.now().toString(), plantationId: effectivePlantationId, updatedAt: Date.now()}, ...p.sales]}))} t={t} />;
       case 'cash': return <CashModule state={scopedState} t={t} />;
       case 'stats': return <StatsModule state={scopedState} t={t} />;
       case 'users': return <UserManagement state={state} setState={setState} t={t} />;
@@ -237,11 +166,11 @@ const App: React.FC = () => {
         <>
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={state.currentUser.role} t={t} onLogout={handleLogout} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
           <div className="flex-1 flex flex-col min-w-0">
-            <Header t={t} theme={state.theme} language={state.language} onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))} onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))} searchQuery={searchQuery} setSearchQuery={setSearchQuery} user={state.currentUser} notifications={state.notifications} markAllRead={() => setState(p => ({ ...p, notifications: p.notifications.map(n => ({...n, isRead: true})) }))} onHelpClick={() => setActiveTab('tutorial')} onMenuToggle={() => setIsSidebarOpen(true)} currentPlantation={currentPlantation} />
+            <Header t={t} theme={state.theme} language={state.language} onThemeToggle={() => setState(p => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))} onLanguageToggle={() => setState(p => ({ ...p, language: p.language === 'FR' ? 'EN' : 'FR' }))} searchQuery={searchQuery} setSearchQuery={setSearchQuery} user={state.currentUser} notifications={state.notifications} markAllRead={() => {}} onHelpClick={() => setActiveTab('tutorial')} onMenuToggle={() => setIsSidebarOpen(true)} currentPlantation={currentPlantation} />
             {inspectedPlantationId && (
-                <div className="bg-amber-600 text-white px-8 py-2 flex justify-between items-center shadow-lg">
-                    <p className="text-[10px] font-black uppercase tracking-widest">👁️ Surveillance : {currentPlantation?.name}</p>
-                    <button onClick={() => { setInspectedPlantationId(null); setActiveTab('superadmin'); }} className="bg-white/20 px-4 py-1 rounded-lg text-[9px] font-black uppercase">Quitter</button>
+                <div className="bg-amber-600 text-white px-8 py-2 flex justify-between items-center shadow-lg border-b border-amber-500">
+                    <p className="text-[10px] font-black uppercase tracking-widest flex items-center"><span className="mr-2 text-lg">👁️</span> Surveillance de {currentPlantation?.name}</p>
+                    <button onClick={() => { setInspectedPlantationId(null); setActiveTab('superadmin'); }} className="bg-white/20 px-4 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white/30">Quitter</button>
                 </div>
             )}
             <main className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">{renderContent()}</main>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AppState } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -9,19 +9,28 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
-  const totalSales = state.sales.reduce((acc, s) => acc + s.total, 0);
-  const totalCosts = state.activities.reduce((acc, a) => acc + a.cost, 0);
+  const totalSales = useMemo(() => state.sales.reduce((acc, s) => acc + s.total, 0), [state.sales]);
+  const totalCosts = useMemo(() => state.activities.reduce((acc, a) => acc + a.cost, 0), [state.activities]);
   const netBalance = totalSales - totalCosts;
 
-  // Tri des ventes par date pour le graphique
-  const sortedSales = [...state.sales].sort((a, b) => a.date.localeCompare(b.date));
-  
-  const chartData = sortedSales.length > 0 
-    ? sortedSales.map(s => ({
-        name: s.date.split('-').slice(1).reverse().join('/'),
-        amount: s.total
-      }))
-    : [{ name: 'Début', amount: 0 }];
+  // AGRÉGATION CHRONOLOGIQUE PAR JOUR
+  const chartData = useMemo(() => {
+    if (state.sales.length === 0) return [{ name: 'N/A', amount: 0 }];
+    
+    // Regrouper par date pour éviter les doublons sur le même jour
+    const grouped = state.sales.reduce((acc, sale) => {
+      acc[sale.date] = (acc[sale.date] || 0) + sale.total;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Convertir en tableau trié
+    return Object.entries(grouped)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, amount]) => ({
+        name: date.split('-').reverse().slice(0, 2).join('/'),
+        amount
+      }));
+  }, [state.sales]);
 
   const stats = [
     { label: t.totalSales, value: `${totalSales.toLocaleString()} FCFA`, color: 'text-green-600', icon: '💰', bg: 'bg-green-50 dark:bg-green-900/10' },
@@ -35,11 +44,11 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">{t.dashboard}</h2>
-          <p className="text-slate-500 dark:text-slate-400 font-medium">{t.dashboardSubtitle}</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Suivi en temps réel de votre exploitation.</p>
         </div>
         <div className="flex items-center space-x-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
            <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-           <span className="text-xs font-black uppercase tracking-widest text-slate-400">{t.systemConnected}</span>
+           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Système Intelligent Prêt</span>
         </div>
       </div>
 
@@ -60,14 +69,17 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm min-h-[400px]">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm min-h-[450px] flex flex-col">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-black text-slate-800 dark:text-white">Évolution des Ventes</h3>
-            <div className="bg-slate-50 dark:bg-slate-700 border-none rounded-xl text-[10px] font-black uppercase px-3 py-1.5 text-slate-400">
-              Historique Global
+            <div>
+              <h3 className="text-xl font-black text-slate-800 dark:text-white">Évolution des Ventes</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance Commerciale Globale</p>
+            </div>
+            <div className="bg-green-50 dark:bg-green-900/20 text-green-600 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
+              Flux Financier
             </div>
           </div>
-          <div className="h-72 w-full">
+          <div className="flex-1 w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -77,34 +89,34 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" dy={10} />
                 <YAxis axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
                 />
-                <Area type="monotone" dataKey="amount" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
+                <Area type="monotone" dataKey="amount" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" animationDuration={1500} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col">
-          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-6">{t.recentActivities}</h3>
+          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-6">Journal des Travaux</h3>
           <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
             {state.activities.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-slate-400 py-10 opacity-50">
+              <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-50">
                 <span className="text-4xl mb-2">📭</span>
-                <p className="text-sm font-bold italic">{t.nothingToReport}</p>
+                <p className="text-xs font-black uppercase">Aucune activité</p>
               </div>
             ) : (
-              state.activities.slice(0, 6).map(activity => (
-                <div key={activity.id} className="flex items-center space-x-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/30 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all border border-transparent hover:border-slate-200 group">
-                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              state.activities.slice(0, 8).map(activity => (
+                <div key={activity.id} className="flex items-center space-x-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/30 hover:bg-slate-100 transition-all group border border-transparent hover:border-slate-200">
+                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
                     {activity.type === 'CREATION' ? '🌱' : activity.type === 'HARVEST' ? '🚜' : activity.type === 'PRODUCTION' ? '🏭' : '⚙️'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-slate-800 dark:text-white truncate">{activity.label}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{activity.date}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{activity.date}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-black text-slate-700 dark:text-slate-300">-{activity.cost.toLocaleString()}</p>
