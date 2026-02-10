@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppState } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -12,12 +13,15 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
   const totalCosts = state.activities.reduce((acc, a) => acc + a.cost, 0);
   const netBalance = totalSales - totalCosts;
 
-  const chartData = state.sales.length > 0 
-    ? state.sales.slice(-7).map(s => ({
-        name: s.date.split('-').slice(1).join('/'),
+  // Tri des ventes par date pour le graphique
+  const sortedSales = [...state.sales].sort((a, b) => a.date.localeCompare(b.date));
+  
+  const chartData = sortedSales.length > 0 
+    ? sortedSales.map(s => ({
+        name: s.date.split('-').slice(1).reverse().join('/'),
         amount: s.total
       }))
-    : [{ name: 'N/A', amount: 0 }];
+    : [{ name: 'Début', amount: 0 }];
 
   const stats = [
     { label: t.totalSales, value: `${totalSales.toLocaleString()} FCFA`, color: 'text-green-600', icon: '💰', bg: 'bg-green-50 dark:bg-green-900/10' },
@@ -51,19 +55,16 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
                 {stat.icon}
               </span>
             </div>
-            <div className="mt-4 h-1 w-12 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className={`h-full bg-current ${stat.color} w-2/3`}></div>
-            </div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm min-h-[400px]">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-black text-slate-800 dark:text-white">{t.sales}</h3>
-            <div className="bg-slate-50 dark:bg-slate-700 border-none rounded-xl text-[10px] font-black uppercase px-3 py-1.5 outline-none text-slate-400">
-              {t.recentActivities}
+            <h3 className="text-xl font-black text-slate-800 dark:text-white">Évolution des Ventes</h3>
+            <div className="bg-slate-50 dark:bg-slate-700 border-none rounded-xl text-[10px] font-black uppercase px-3 py-1.5 text-slate-400">
+              Historique Global
             </div>
           </div>
           <div className="h-72 w-full">
@@ -103,7 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-slate-800 dark:text-white truncate">{activity.label}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{activity.date} • {activity.zone}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{activity.date}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-black text-slate-700 dark:text-slate-300">-{activity.cost.toLocaleString()}</p>
@@ -112,9 +113,6 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
               ))
             )}
           </div>
-          <button className="mt-6 w-full py-4 text-xs font-black uppercase tracking-[0.2em] text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded-2xl transition-all border-2 border-dashed border-green-200 dark:border-green-800">
-            {t.viewAllLog}
-          </button>
         </div>
       </div>
     </div>
