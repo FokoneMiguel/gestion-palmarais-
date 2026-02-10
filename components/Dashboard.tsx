@@ -15,9 +15,9 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
 
   // AGRÉGATION CHRONOLOGIQUE PAR JOUR
   const chartData = useMemo(() => {
-    if (state.sales.length === 0) return [{ name: 'N/A', amount: 0 }];
+    if (!state.sales || state.sales.length === 0) return [];
     
-    // Regrouper par date pour éviter les doublons sur le même jour
+    // Regrouper par date
     const grouped = state.sales.reduce((acc, sale) => {
       acc[sale.date] = (acc[sale.date] || 0) + sale.total;
       return acc;
@@ -80,23 +80,30 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
             </div>
           </div>
           <div className="flex-1 w-full min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" dy={10} />
-                <YAxis axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
-                />
-                <Area type="monotone" dataKey="amount" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" animationDuration={1500} />
-              </AreaChart>
-            </ResponsiveContainer>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" dy={10} />
+                  <YAxis axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                  />
+                  <Area type="monotone" dataKey="amount" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" animationDuration={1500} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
+                 <span className="text-6xl">📊</span>
+                 <p className="font-black uppercase text-xs tracking-[0.2em]">Aucune donnée de vente à afficher</p>
+              </div>
+            )}
           </div>
         </div>
 

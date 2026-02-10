@@ -38,10 +38,8 @@ const DEMO_ADMIN: User = {
 };
 
 const DEMO_ACTIVITIES: Activity[] = [
-  // Janvier : Gros investissements de création
   { id: 'demo-act-1', plantationId: 'DEMO-BST', type: 'CREATION', label: 'Mise en terre', date: '2024-01-15', zone: 'Parcelle A1', quantity: 500, unit: 'plants', cost: 450000, workers: ['Moussa', 'Paul'], updatedAt: Date.now(), synced: true },
   { id: 'demo-act-2', plantationId: 'DEMO-BST', type: 'MAINTENANCE', label: 'Élagage', date: '2024-02-05', zone: 'Parcelle A1', cost: 65000, workers: ['Koffi'], updatedAt: Date.now(), synced: true },
-  // Mars : Activité intense
   { id: 'demo-act-3', plantationId: 'DEMO-BST', type: 'HARVEST', label: 'Coupe des régimes', date: '2024-03-01', zone: 'Parcelle A1', quantity: 1200, unit: 'kg', cost: 80000, workers: ['Equipe Alpha'], updatedAt: Date.now(), synced: true },
   { id: 'demo-act-4', plantationId: 'DEMO-BST', type: 'PRODUCTION', label: 'Pressage Batch #1', date: '2024-03-10', zone: 'Usine Nord', inputQuantity: 1200, inputUnit: 'kg', quantity: 240, unit: 'L', cost: 35000, workers: ['Yao'], updatedAt: Date.now(), synced: true },
   { id: 'demo-act-5', plantationId: 'DEMO-BST', type: 'PACKAGING', label: 'Mise en bidons', date: '2024-03-15', zone: 'Conditionnement', quantity: 12, unit: 'bidons', cost: 5000, workers: ['Awa'], updatedAt: Date.now(), synced: true },
@@ -73,8 +71,17 @@ const INITIAL_PLANTATIONS: Plantation[] = [
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
     try {
-      const saved = localStorage.getItem('plameraie_db_v4_demo');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('plameraie_db_final_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // On s'assure que les données démo sont bien présentes même en cas de mise à jour
+        if (!parsed.activities.some((a: any) => a.plantationId === 'DEMO-BST')) {
+          parsed.activities = [...parsed.activities, ...DEMO_ACTIVITIES];
+          parsed.sales = [...parsed.sales, ...DEMO_SALES];
+          parsed.cashMovements = [...parsed.cashMovements, ...DEMO_CASH];
+        }
+        return parsed;
+      }
     } catch (e) {}
     return {
       plantations: INITIAL_PLANTATIONS,
@@ -99,8 +106,18 @@ const App: React.FC = () => {
 
   const t = TRANSLATIONS[state.language];
 
+  // EFFET POUR LE THÈME SOMBRE/CLAIR (Indispensable)
   useEffect(() => {
-    localStorage.setItem('plameraie_db_v4_demo', JSON.stringify(state));
+    const root = window.document.documentElement;
+    if (state.theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [state.theme]);
+
+  useEffect(() => {
+    localStorage.setItem('plameraie_db_final_v1', JSON.stringify(state));
   }, [state]);
 
   const effectivePlantationId = useMemo(() => {
@@ -138,7 +155,22 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (state.currentUser?.role === UserRole.SUPER_ADMIN && !inspectedPlantationId && activeTab !== 'superadmin' && activeTab !== 'tutorial') {
-        return <SuperAdminModule state={state} setState={setState} t={t} onInspect={(id) => { setInspectedPlantationId(id); setActiveTab('dashboard'); }} />;
+        return (
+          <div className="space-y-8">
+            <SuperAdminModule state={state} setState={setState} t={t} onInspect={(id) => { setInspectedPlantationId(id); setActiveTab('dashboard'); }} />
+            {scopedState.activities.length === 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 p-8 rounded-[2rem] border-2 border-dashed border-amber-200 dark:border-amber-800 text-center">
+                 <p className="text-amber-800 dark:text-amber-400 font-black uppercase text-xs tracking-widest mb-4">Vous êtes sur le compte maître MiguelF (Vide)</p>
+                 <button 
+                  onClick={() => { setInspectedPlantationId('DEMO-BST'); setActiveTab('dashboard'); }}
+                  className="bg-amber-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-amber-700 transition-all shadow-xl"
+                 >
+                   👁️ Voir les données de démonstration
+                 </button>
+              </div>
+            )}
+          </div>
+        );
     }
 
     switch (activeTab) {
