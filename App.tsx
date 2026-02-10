@@ -18,19 +18,63 @@ import SuperAdminModule from './components/SuperAdminModule.tsx';
 import Toast from './components/Toast.tsx';
 import { syncDataWithServer, syncDelete, pushNewAccounts, pushSystemNotification } from './syncService.ts';
 
+// DONNÉES DE DÉMONSTRATION PRÉ-REMPLIES
+const DEMO_PLANTATION: Plantation = {
+  id: 'DEMO-BST',
+  name: 'Palmeraie Royale (Démo)',
+  ownerName: 'M. Jean Démo',
+  contactEmail: 'demo@palmeraie.com',
+  status: 'ACTIVE',
+  expiryDate: '2030-12-31'
+};
+
+const DEMO_ADMIN: User = {
+  id: 'user-demo-01',
+  username: 'demo',
+  password: 'demo',
+  role: UserRole.ADMIN,
+  plantationId: 'DEMO-BST',
+  lastLoginAt: new Date().toISOString()
+};
+
+const DEMO_ACTIVITIES: Activity[] = [
+  { id: 'demo-act-1', plantationId: 'DEMO-BST', type: 'CREATION', label: 'Mise en terre', date: '2024-01-10', zone: 'Parcelle A1', quantity: 500, unit: 'plants', cost: 250000, workers: ['Moussa', 'Paul'], updatedAt: Date.now(), synced: true },
+  { id: 'demo-act-2', plantationId: 'DEMO-BST', type: 'MAINTENANCE', label: 'Désherbage manuel', date: '2024-02-15', zone: 'Parcelle A1', cost: 45000, workers: ['Koffi'], updatedAt: Date.now(), synced: true },
+  { id: 'demo-act-3', plantationId: 'DEMO-BST', type: 'HARVEST', label: 'Coupe des régimes', date: '2024-03-05', zone: 'Parcelle A1', quantity: 1200, unit: 'kg', cost: 60000, workers: ['Equipe Alpha'], updatedAt: Date.now(), synced: true },
+  { id: 'demo-act-4', plantationId: 'DEMO-BST', type: 'PRODUCTION', label: 'Pressage à chaud', date: '2024-03-06', zone: 'Usine Nord', inputQuantity: 1200, inputUnit: 'kg', quantity: 240, unit: 'L', cost: 35000, workers: ['Yao'], updatedAt: Date.now(), synced: true },
+  { id: 'demo-act-5', plantationId: 'DEMO-BST', type: 'PACKAGING', label: 'Mise en bidons 20L', date: '2024-03-07', zone: 'Conditionnement', quantity: 12, unit: 'bidons', cost: 5000, workers: ['Awa'], updatedAt: Date.now(), synced: true },
+];
+
+const DEMO_SALES: Sale[] = [
+  { id: 'demo-sale-1', plantationId: 'DEMO-BST', date: '2024-03-10', client: 'Grossiste Abidjan', product: 'Huile de Palme', quantity: 200, unitPrice: 900, total: 180000, updatedAt: Date.now(), synced: true },
+  { id: 'demo-sale-2', plantationId: 'DEMO-BST', date: '2024-03-12', client: 'Boutique Locale', product: 'Huile de Palme', quantity: 40, unitPrice: 950, total: 38000, updatedAt: Date.now(), synced: true },
+];
+
 const INITIAL_USERS: User[] = [
   { id: 'master-01', username: 'MiguelF', role: UserRole.SUPER_ADMIN, password: 'MF-05', plantationId: 'SYSTEM' },
+  DEMO_ADMIN
 ];
 
 const INITIAL_PLANTATIONS: Plantation[] = [
   { id: 'SYSTEM', name: 'Plameraie BST Master', ownerName: 'MiguelF', contactEmail: 'master@palmeraie.com', status: 'ACTIVE', expiryDate: '2099-01-01' },
+  DEMO_PLANTATION
 ];
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
     try {
       const saved = localStorage.getItem('plameraie_db_v3');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // On s'assure que MiguelF et le compte démo sont toujours présents même après une mise à jour
+        if (!parsed.plantations.find((p: any) => p.id === 'DEMO-BST')) {
+          parsed.plantations.push(DEMO_PLANTATION);
+          parsed.users.push(DEMO_ADMIN);
+          parsed.activities = [...parsed.activities, ...DEMO_ACTIVITIES];
+          parsed.sales = [...parsed.sales, ...DEMO_SALES];
+        }
+        return parsed;
+      }
     } catch (e) {
       console.error("Erreur de lecture Storage", e);
     }
@@ -38,8 +82,8 @@ const App: React.FC = () => {
       plantations: INITIAL_PLANTATIONS,
       users: INITIAL_USERS,
       currentUser: null,
-      activities: [],
-      sales: [],
+      activities: DEMO_ACTIVITIES,
+      sales: DEMO_SALES,
       cashMovements: [],
       notifications: [],
       language: 'FR',
@@ -70,7 +114,6 @@ const App: React.FC = () => {
   // Sync boucle principale
   useEffect(() => {
     const syncInterval = setInterval(() => {
-      // On passe addToast pour que MiguelF reçoive les alertes système en temps réel
       syncDataWithServer(state, setState, state.currentUser?.role === UserRole.SUPER_ADMIN ? addToast : undefined);
     }, 3000);
     return () => clearInterval(syncInterval);
@@ -114,8 +157,8 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (user: User) => {
-    // Si c'est un ADMIN de plantation qui se connecte pour la première fois
-    if (user.role === UserRole.ADMIN && !user.lastLoginAt) {
+    // Ne pas envoyer de notif pour le compte démo
+    if (user.role === UserRole.ADMIN && !user.lastLoginAt && user.plantationId !== 'DEMO-BST') {
         const plantationName = state.plantations.find(p => p.id === user.plantationId)?.name || 'Inconnue';
         pushSystemNotification(`🚀 Nouveau client : La plantation "${plantationName}" s'est activée !`);
     }
