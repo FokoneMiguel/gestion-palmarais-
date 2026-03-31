@@ -13,24 +13,41 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
   const totalCosts = useMemo(() => state.activities.reduce((acc, a) => acc + a.cost, 0), [state.activities]);
   const netBalance = totalSales - totalCosts;
 
-  // AGRÉGATION CHRONOLOGIQUE PAR JOUR
+  // AGRÉGATION CHRONOLOGIQUE PAR JOUR (Ventes et Coûts)
   const chartData = useMemo(() => {
-    if (!state.sales || state.sales.length === 0) return [];
+    const grouped: Record<string, { date: string, sales: number, costs: number }> = {};
     
-    // Regrouper par date
-    const grouped = state.sales.reduce((acc, sale) => {
-      acc[sale.date] = (acc[sale.date] || 0) + sale.total;
-      return acc;
-    }, {} as Record<string, number>);
+    // On prend toutes les dates uniques
+    const allDates = new Set([
+      ...state.sales.map(s => s.date),
+      ...state.activities.map(a => a.date)
+    ]);
+
+    allDates.forEach(date => {
+      grouped[date] = { 
+        date, 
+        sales: 0, 
+        costs: 0 
+      };
+    });
+
+    state.sales.forEach(sale => {
+      if (grouped[sale.date]) grouped[sale.date].sales += sale.total;
+    });
+
+    state.activities.forEach(act => {
+      if (grouped[act.date]) grouped[act.date].costs += act.cost;
+    });
 
     // Convertir en tableau trié
-    return Object.entries(grouped)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, amount]) => ({
-        name: date.split('-').reverse().slice(0, 2).join('/'),
-        amount
+    return Object.values(grouped)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(item => ({
+        name: item.date.split('-').reverse().slice(0, 2).join('/'),
+        sales: item.sales,
+        costs: item.costs
       }));
-  }, [state.sales]);
+  }, [state.sales, state.activities]);
 
   const stats = [
     { label: t.totalSales, value: `${totalSales.toLocaleString()} FCFA`, color: 'text-green-600', icon: '💰', bg: 'bg-green-50 dark:bg-green-900/10' },
@@ -72,11 +89,11 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
         <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm min-h-[450px] flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-xl font-black text-slate-800 dark:text-white">Évolution des Ventes</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance Commerciale Globale</p>
+              <h3 className="text-xl font-black text-slate-800 dark:text-white">Flux de Trésorerie</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ventes vs Dépenses par jour</p>
             </div>
             <div className="bg-green-50 dark:bg-green-900/20 text-green-600 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
-              Flux Financier
+              Performance
             </div>
           </div>
           <div className="flex-1 w-full min-h-[300px]">
@@ -88,6 +105,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
                       <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
                       <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="colorCosts" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" dy={10} />
@@ -95,13 +116,14 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
                   <Tooltip 
                     contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
                   />
-                  <Area type="monotone" dataKey="amount" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" animationDuration={1500} />
+                  <Area type="monotone" dataKey="sales" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" animationDuration={1500} />
+                  <Area type="monotone" dataKey="costs" name="Dépenses (FCFA)" stroke="#ef4444" strokeWidth={4} fillOpacity={1} fill="url(#colorCosts)" animationDuration={1500} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
                  <span className="text-6xl">📊</span>
-                 <p className="font-black uppercase text-xs tracking-[0.2em]">Aucune donnée de vente à afficher</p>
+                 <p className="font-black uppercase text-xs tracking-[0.2em]">Aucune donnée à afficher</p>
               </div>
             )}
           </div>

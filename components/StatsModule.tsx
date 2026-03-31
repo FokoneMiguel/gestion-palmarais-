@@ -109,7 +109,7 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vision Mensuelle de la Rentabilité</p>
           </div>
         </div>
-        <div className="h-[350px] w-full">
+        <div className="h-[350px] w-full min-h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={profitabilityData} barGap={8}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -131,7 +131,7 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
         {/* COURBE DE CROISSANCE (ASCENSION) */}
         <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
           <h3 className="text-xl font-black text-slate-800 dark:text-white mb-8">Trajectoire de Croissance</h3>
-          <div className="h-72 w-full">
+          <div className="h-72 w-full min-h-[288px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={growthData}>
                 <defs>
@@ -162,7 +162,7 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
         {/* RÉPARTITION DES DÉPENSES */}
         <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center">
           <h3 className="text-xl font-black text-slate-800 dark:text-white mb-8 self-start">Où va l'argent ?</h3>
-          <div className="h-72 w-full">
+          <div className="h-72 w-full min-h-[288px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={8} dataKey="value">

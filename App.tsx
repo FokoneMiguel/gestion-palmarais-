@@ -140,7 +140,30 @@ const App: React.FC = () => {
     const updatedUsers = state.users.map(u => u.id === user.id ? { ...u, lastLoginAt: new Date().toISOString() } : u);
     setState(prev => ({ ...prev, currentUser: user, users: updatedUsers }));
     setActiveTab(user.role === UserRole.SUPER_ADMIN ? 'superadmin' : 'dashboard');
+    
+    // Notification pour le Super-Admin si c'est un Admin qui se connecte
+    if (user.role === UserRole.ADMIN) {
+      pushSystemNotification(`Connexion de l'administrateur : ${user.username}`, 'INFO');
+    }
   };
+
+  // SYNC AUTOMATIQUE
+  useEffect(() => {
+    if (state.currentUser) {
+      const timer = setTimeout(() => {
+        syncDataWithServer(state, setState, addToast);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.activities.length, state.sales.length, state.cashMovements.length, state.currentUser?.id]);
+
+  // Sync au démarrage et changement de connexion
+  useEffect(() => {
+    const handleSync = () => syncDataWithServer(state, setState, addToast);
+    window.addEventListener('online', handleSync);
+    if (navigator.onLine) handleSync();
+    return () => window.removeEventListener('online', handleSync);
+  }, [state.currentUser?.id]);
 
   const handleLogout = () => {
     setState(prev => ({ ...prev, currentUser: null }));

@@ -34,11 +34,11 @@ const saveToCloud = (data: CloudData) => {
 /**
  * Envoie une notification système que seul le Super-Admin recevra
  */
-export const pushSystemNotification = (message: string) => {
+export const pushSystemNotification = (message: string, type: 'SUCCESS' | 'INFO' | 'WARNING' = 'INFO') => {
     const cloud = getCloudData();
     const newNotif: Notification = {
         id: `sys-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-        type: 'SUCCESS',
+        type,
         message,
         date: new Date().toISOString(),
         isRead: false
@@ -75,10 +75,13 @@ export const syncDataWithServer = async (state: AppState, setState: Function, ad
   const plantationId = state.currentUser?.plantationId;
   const isMaster = state.currentUser?.role === 'SUPER_ADMIN';
 
+  if (!state.currentUser) return;
+
   // 1. PUSH : Données locales -> Cloud
   let hasChanges = false;
   const unsyncedActivities = state.activities.filter(a => !a.synced);
   const unsyncedSales = state.sales.filter(s => !s.synced);
+  const unsyncedCash = state.cashMovements.filter(c => !c.synced);
 
   unsyncedActivities.forEach(a => {
       if (!cloud.activities.find(ca => ca.id === a.id) && !cloud.deletedIds.includes(a.id)) {
@@ -94,12 +97,31 @@ export const syncDataWithServer = async (state: AppState, setState: Function, ad
       }
   });
 
+  unsyncedCash.forEach(c => {
+      if (!cloud.cash.find(cc => cc.id === c.id) && !cloud.deletedIds.includes(c.id)) {
+          cloud.cash.push({ ...c, synced: true });
+          hasChanges = true;
+      }
+  });
+
   if (isMaster) {
-      cloud.plantations = state.plantations;
-      hasChanges = true;
+      // Le master synchronise les plantations et les utilisateurs
+      state.plantations.forEach(p => {
+          const idx = cloud.plantations.findIndex(cp => cp.id === p.id);
+          if (idx === -1) { cloud.plantations.push(p); hasChanges = true; }
+          else if (JSON.stringify(cloud.plantations[idx]) !== JSON.stringify(p)) {
+              cloud.plantations[idx] = p;
+              hasChanges = true;
+          }
+      });
   }
 
-  if (hasChanges) saveToCloud(cloud);
+  if (hasChanges) {
+      saveToCloud(cloud);
+      if (!isMaster) {
+          pushSystemNotification(`Mise à jour reçue de ${state.currentUser.username} (${state.plantations.find(p => p.id === plantationId)?.name || plantationId})`, 'INFO');
+      }
+  }
 
   // 2. PULL : Cloud -> Local
   const merge = (local: any[], server: any[], filterById: boolean = true) => {
@@ -118,6 +140,7 @@ export const syncDataWithServer = async (state: AppState, setState: Function, ad
 
   const finalActivities = merge(state.activities, cloud.activities);
   const finalSales = merge(state.sales, cloud.sales);
+  const finalCash = merge(state.cashMovements, cloud.cash);
   const finalPlantations = merge(state.plantations, cloud.plantations, false);
   const finalUsers = merge(state.users, cloud.users, false);
 
@@ -127,7 +150,7 @@ export const syncDataWithServer = async (state: AppState, setState: Function, ad
       cloud.systemNotifications.forEach(sn => {
           if (!state.notifications.find(n => n.id === sn.id)) {
               finalNotifications.push(sn);
-              if (addToast) addToast(sn.message, 'success');
+              if (addToast) addToast(sn.message, 'info');
           }
       });
   }
@@ -135,6 +158,7 @@ export const syncDataWithServer = async (state: AppState, setState: Function, ad
   const needsUpdate = 
       finalActivities.length !== state.activities.length ||
       finalSales.length !== state.sales.length ||
+      finalCash.length !== state.cashMovements.length ||
       finalPlantations.length !== state.plantations.length ||
       finalUsers.length !== state.users.length ||
       finalNotifications.length !== state.notifications.length ||
@@ -145,6 +169,7 @@ export const syncDataWithServer = async (state: AppState, setState: Function, ad
           ...prev,
           activities: finalActivities.sort((a,b) => b.updatedAt - a.updatedAt),
           sales: finalSales.sort((a,b) => b.updatedAt - a.updatedAt),
+          cashMovements: finalCash.sort((a,b) => b.updatedAt - a.updatedAt),
           plantations: finalPlantations,
           users: finalUsers,
           notifications: finalNotifications.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
