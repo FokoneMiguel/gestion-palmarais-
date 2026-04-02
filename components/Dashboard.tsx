@@ -21,7 +21,9 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
     const allDates = new Set([
       ...state.sales.map(s => s.date),
       ...state.activities.map(a => a.date)
-    ]);
+    ].filter(d => d && typeof d === 'string'));
+
+    if (allDates.size === 0) return [];
 
     allDates.forEach(date => {
       grouped[date] = { 
@@ -32,11 +34,11 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
     });
 
     state.sales.forEach(sale => {
-      if (grouped[sale.date]) grouped[sale.date].sales += sale.total;
+      if (sale.date && grouped[sale.date]) grouped[sale.date].sales += sale.total;
     });
 
     state.activities.forEach(act => {
-      if (grouped[act.date]) grouped[act.date].costs += act.cost;
+      if (act.date && grouped[act.date]) grouped[act.date].costs += act.cost;
     });
 
     // Convertir en tableau trié
