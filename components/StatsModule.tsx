@@ -98,12 +98,17 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      {/* Diagnostic invisible pour aider le rendu */}
+      <div className="sr-only">
+         Data check: Profitability {profitabilityData.length}, Pie {pieData.length}, Growth {growthData.length}
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 px-2">
         <div>
-          <h2 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Analyses Techniques</h2>
-          <p className="text-slate-500 font-medium">Rentabilité et croissance de votre patrimoine.</p>
+          <h2 className="text-3xl md:text-4xl font-black text-slate-800 dark:text-white tracking-tighter">Analyses Techniques</h2>
+          <p className="text-slate-500 font-medium text-sm">Rentabilité et croissance de votre patrimoine.</p>
         </div>
-        <div className={`px-6 py-3 rounded-2xl border flex items-center space-x-3 ${Number(ROI) >= 0 ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+        <div className={`px-6 py-3 rounded-2xl border flex items-center space-x-3 shadow-sm ${Number(ROI) >= 0 ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
           <span className="text-2xl">{Number(ROI) >= 0 ? '📈' : '📉'}</span>
           <div>
             <p className="text-[9px] font-black uppercase tracking-widest opacity-70">Rendement (ROI)</p>
@@ -113,33 +118,35 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
       </div>
 
       {/* RENTABILITÉ GLOBALE (REVENUS vs DÉPENSES) */}
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col min-h-[450px]">
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h3 className="text-xl font-black text-slate-800 dark:text-white">Comparatif Revenus vs Dépenses</h3>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vision Mensuelle de la Rentabilité</p>
-          </div>
+      <div className="bg-white dark:bg-slate-800 p-4 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col min-h-[450px]">
+        <div className="mb-6">
+          <h3 className="text-xl font-black text-slate-800 dark:text-white">Comparatif Revenus vs Dépenses</h3>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vision Mensuelle de la Rentabilité</p>
         </div>
-        <div className="h-[350px] w-full min-h-[350px] flex-1">
+        
+        <div className="w-full h-[350px] min-h-[350px] overflow-hidden">
           {profitabilityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={profitabilityData} barGap={8}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" fontSize={10} stroke="#94a3b8" axisLine={false} tickLine={false} />
+            <ResponsiveContainer width="100%" height={350} debounce={50}>
+              <BarChart data={profitabilityData} barGap={8} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ccc" opacity={0.2} />
+                <XAxis dataKey="name" fontSize={10} stroke="#94a3b8" axisLine={false} tickLine={false} dy={5} />
                 <YAxis fontSize={10} stroke="#94a3b8" axisLine={false} tickLine={false} />
                 <Tooltip 
-                  cursor={{fill: '#f8fafc'}} 
+                  cursor={{fill: 'rgba(0,0,0,0.05)'}} 
                   contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold' }} 
                 />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }} />
-                <Bar dataKey="revenus" name="Revenus (Ventes)" fill="#166534" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="depenses" name="Dépenses (Coûts)" fill="#ef4444" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="revenus" name="Ventes" fill="#166534" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="depenses" name="Coûts" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
-               <span className="text-6xl">📊</span>
-               <p className="font-black uppercase text-xs tracking-[0.2em]">Aucune donnée mensuelle</p>
+            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/20 rounded-[2rem] p-10 text-center space-y-4">
+               <span className="text-5xl opacity-40">📊</span>
+               <div className="space-y-1">
+                 <p className="font-black uppercase text-xs tracking-widest">Aucune donnée trouvée</p>
+                 <p className="text-[10px] font-medium max-w-[200px] mx-auto opacity-70">En tant que Super-Admin, sélectionnez une plantation dans l'Onglet Accueil pour voir ses graphiques.</p>
+               </div>
             </div>
           )}
         </div>
@@ -147,15 +154,15 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* COURBE DE CROISSANCE (ASCENSION) */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm min-h-[400px] flex flex-col">
-          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-8">Trajectoire de Croissance</h3>
-          <div className="h-72 w-full min-h-[288px] flex-1">
+        <div className="bg-white dark:bg-slate-800 p-4 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col min-h-[400px]">
+          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-6">Trajectoire de Croissance</h3>
+          <div className="w-full h-72 min-h-[288px] overflow-hidden flex-1 relative">
             {growthData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={growthData}>
+              <ResponsiveContainer width="100%" height={288} debounce={50}>
+                <AreaChart data={growthData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSolde" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4}/>
                       <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
@@ -165,33 +172,42 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
                   <Area 
                     type="monotone" 
                     dataKey="solde" 
-                    name="Capital Net" 
+                    name="Capital" 
                     stroke="#2563eb" 
                     strokeWidth={4} 
                     fillOpacity={1} 
                     fill="url(#colorSolde)" 
-                    animationDuration={2000}
+                    isAnimationActive={false}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
-                 <span className="text-5xl">📈</span>
-                 <p className="font-black uppercase text-xs tracking-[0.2em]">Données insuffisantes</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/20 rounded-[2rem] p-6 text-center">
+                 <span className="text-3xl opacity-30 mb-2">📈</span>
+                 <p className="font-black uppercase text-[10px] tracking-widest leading-relaxed">Historique insuffisant pour tracer la courbe</p>
               </div>
             )}
           </div>
-          <p className="text-[9px] font-black text-center text-slate-400 uppercase tracking-widest mt-4">Évolution cumulée du capital de l'exploitation</p>
+          <p className="text-[9px] font-black text-center text-slate-400 uppercase tracking-widest mt-4">Évolution cumulée du capital</p>
         </div>
 
         {/* RÉPARTITION DES DÉPENSES */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center min-h-[400px]">
-          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-8 self-start">Où va l'argent ?</h3>
-          <div className="h-72 w-full min-h-[288px] flex-1">
+        <div className="bg-white dark:bg-slate-800 p-4 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center min-h-[400px]">
+          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-6 self-start">Répartition des Coûts</h3>
+          <div className="w-full h-72 min-h-[288px] overflow-hidden flex-1 relative">
             {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={288} debounce={50}>
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={8} dataKey="value">
+                  <Pie 
+                    data={pieData} 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius={60} 
+                    outerRadius={90} 
+                    paddingAngle={8} 
+                    dataKey="value"
+                    isAnimationActive={false}
+                  >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -201,9 +217,9 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
-                 <span className="text-5xl">🥧</span>
-                 <p className="font-black uppercase text-xs tracking-[0.2em]">Aucune dépense enregistrée</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/20 rounded-[2rem] p-6 text-center">
+                 <span className="text-3xl opacity-30 mb-2">🥧</span>
+                 <p className="font-black uppercase text-[10px] tracking-widest leading-relaxed">Aucune dépense à répartir</p>
               </div>
             )}
           </div>

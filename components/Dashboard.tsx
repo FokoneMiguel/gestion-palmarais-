@@ -98,10 +98,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
               Performance
             </div>
           </div>
-          <div className="flex-1 w-full min-h-[300px]">
+          <div className="flex-1 w-full h-[300px] min-h-[300px] overflow-hidden relative">
             {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+              <ResponsiveContainer width="100%" height={300} debounce={50}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
@@ -112,20 +112,27 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
                       <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ccc" opacity={0.1} />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" dy={10} />
                   <YAxis axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" />
                   <Tooltip 
                     contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
                   />
-                  <Area type="monotone" dataKey="sales" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" animationDuration={1500} />
-                  <Area type="monotone" dataKey="costs" name="Dépenses (FCFA)" stroke="#ef4444" strokeWidth={4} fillOpacity={1} fill="url(#colorCosts)" animationDuration={1500} />
+                  <Area type="monotone" dataKey="sales" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" isAnimationActive={false} />
+                  <Area type="monotone" dataKey="costs" name="Dépenses (FCFA)" stroke="#ef4444" strokeWidth={4} fillOpacity={1} fill="url(#colorCosts)" isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
-                 <span className="text-6xl">📊</span>
-                 <p className="font-black uppercase text-xs tracking-[0.2em]">Aucune donnée à afficher</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/20 rounded-[2rem] p-10 text-center space-y-4">
+                 <span className="text-6xl animate-pulse">📊</span>
+                 <div className="space-y-1">
+                   <p className="font-black uppercase text-xs tracking-widest text-slate-400">En attente de données</p>
+                   {state.currentUser?.role === UserRole.SUPER_ADMIN && !state.currentUser.plantationId ? (
+                     <p className="text-[10px] font-medium max-w-[200px] mx-auto opacity-70">Sélectionnez une plantation dans l'Accueil pour l'analyser.</p>
+                   ) : (
+                     <p className="text-[10px] font-medium opacity-70">Saisissez des activités ou des ventes pour voir le flux.</p>
+                   )}
+                 </div>
               </div>
             )}
           </div>
