@@ -124,9 +124,9 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vision Mensuelle de la Rentabilité</p>
         </div>
         
-        <div className="w-full h-[350px] min-h-[350px] overflow-hidden">
+        <div className="w-full h-[350px] min-h-[350px] relative overflow-hidden" style={{ display: 'block' }}>
           {profitabilityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={350} debounce={50}>
+            <ResponsiveContainer width="99%" height="100%">
               <BarChart data={profitabilityData} barGap={8} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ccc" opacity={0.2} />
                 <XAxis dataKey="name" fontSize={10} stroke="#94a3b8" axisLine={false} tickLine={false} dy={5} />
@@ -156,16 +156,10 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
         {/* COURBE DE CROISSANCE (ASCENSION) */}
         <div className="bg-white dark:bg-slate-800 p-4 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col min-h-[400px]">
           <h3 className="text-xl font-black text-slate-800 dark:text-white mb-6">Trajectoire de Croissance</h3>
-          <div className="w-full h-72 min-h-[288px] overflow-hidden flex-1 relative">
+          <div className="w-full h-72 min-h-[288px] relative overflow-hidden" style={{ display: 'block' }}>
             {growthData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={288} debounce={50}>
+              <ResponsiveContainer width="99%" height="100%">
                 <AreaChart data={growthData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorSolde" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
                   <XAxis dataKey="date" hide />
                   <YAxis hide />
                   <Tooltip contentStyle={{ borderRadius: '20px', border: 'none' }} />
@@ -176,7 +170,7 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
                     stroke="#2563eb" 
                     strokeWidth={4} 
                     fillOpacity={1} 
-                    fill="url(#colorSolde)" 
+                    fill="#2563eb33" 
                     isAnimationActive={false}
                   />
                 </AreaChart>
@@ -194,16 +188,16 @@ const StatsModule: React.FC<StatsModuleProps> = ({ state, t }) => {
         {/* RÉPARTITION DES DÉPENSES */}
         <div className="bg-white dark:bg-slate-800 p-4 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center min-h-[400px]">
           <h3 className="text-xl font-black text-slate-800 dark:text-white mb-6 self-start">Répartition des Coûts</h3>
-          <div className="w-full h-72 min-h-[288px] overflow-hidden flex-1 relative">
+          <div className="w-full h-72 min-h-[288px] relative overflow-hidden" style={{ display: 'block' }}>
             {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={288} debounce={50}>
+              <ResponsiveContainer width="99%" height="100%">
                 <PieChart>
                   <Pie 
                     data={pieData} 
                     cx="50%" 
                     cy="50%" 
-                    innerRadius={60} 
-                    outerRadius={90} 
+                    innerRadius={50} 
+                    outerRadius={80} 
                     paddingAngle={8} 
                     dataKey="value"
                     isAnimationActive={false}

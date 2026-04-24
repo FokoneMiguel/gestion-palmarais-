@@ -98,28 +98,59 @@ const Dashboard: React.FC<DashboardProps> = ({ state, t }) => {
               Performance
             </div>
           </div>
-          <div className="flex-1 w-full h-[300px] min-h-[300px] overflow-hidden relative">
+          <div className="flex-1 w-full min-h-[300px] relative" style={{ display: 'block', height: '300px' }}>
             {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300} debounce={50}>
+              <ResponsiveContainer width="99%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorCosts" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ccc" opacity={0.1} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" dy={10} />
-                  <YAxis axisLine={false} tickLine={false} fontSize={10} stroke="#94a3b8" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ccc" opacity={0.2} />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    fontSize={10} 
+                    stroke="#94a3b8" 
+                    dy={10}
+                    minTickGap={20}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    fontSize={10} 
+                    stroke="#94a3b8" 
+                  />
                   <Tooltip 
                     contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
                   />
-                  <Area type="monotone" dataKey="sales" name="Ventes (FCFA)" stroke="#16a34a" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" isAnimationActive={false} />
-                  <Area type="monotone" dataKey="costs" name="Dépenses (FCFA)" stroke="#ef4444" strokeWidth={4} fillOpacity={1} fill="url(#colorCosts)" isAnimationActive={false} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="sales" 
+                    name="Ventes" 
+                    stroke="#22c55e" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#colorSales)" 
+                    isAnimationActive={false}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="costs" 
+                    name="Dépenses" 
+                    stroke="#ef4444" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#colorCosts)" 
+                    isAnimationActive={false}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
